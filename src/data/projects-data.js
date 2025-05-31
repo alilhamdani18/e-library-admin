@@ -7,6 +7,7 @@ export const projectsData = [
     description: "Panduan lengkap membuat aplikasi mobile menggunakan Flutter.",
     rating: 4.8,
     likes: 124,
+    pages:178,
     category: "Pemrograman",
     members: [
       { img: "/img/avatar/user1.jpg", name: "Lina" },
@@ -20,7 +21,8 @@ export const projectsData = [
     year: "2021",
     description: "Buku referensi utama untuk mahasiswa farmasi dan tenaga medis.",
     rating: 4.5,
-    likes: 89,
+    likes: 89, 
+    pages:178,
     category: "Kesehatan",
     members: [
       { img: "/img/avatar/user3.jpg", name: "Rani" },
@@ -35,6 +37,7 @@ export const projectsData = [
     description: "Eksplorasi budaya dan tradisi dari berbagai daerah di Indonesia.",
     rating: 4.7,
     likes: 102,
+    pages:178,
     category: "Budaya",
     members: [
       { img: "/img/avatar/user5.jpg", name: "Alif" },
@@ -48,7 +51,23 @@ export const projectsData = [
     year: "2022",
     description: "Cerita inspiratif dari seorang petualang muda menjelajah dunia.",
     rating: 4.3,
-    likes: 76,
+    likes: 76, 
+    pages:178,
+    category: "Fiksi",
+    members: [
+      { img: "/img/avatar/user7.jpg", name: "Nanda" },
+      { img: "/img/avatar/user8.jpg", name: "Agus" },
+    ],
+  },
+  {
+    title: "Kisah Perjalanan Sang Penjelajah",
+    img: "/img/home-decor-4.jpeg",
+    author: "Dewi Kartika",
+    year: "2022",
+    description: "Cerita inspiratif dari seorang petualang muda menjelajah dunia.",
+    rating: 4.3,
+    likes: 76, 
+    pages:178,
     category: "Fiksi",
     members: [
       { img: "/img/avatar/user7.jpg", name: "Nanda" },

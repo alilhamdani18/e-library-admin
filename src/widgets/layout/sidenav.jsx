@@ -22,7 +22,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
     <aside
       className={`${sidenavTypes[sidenavType]} ${
         openSidenav ? "translate-x-0" : "-translate-x-80"
-      } fixed inset-0 z-50 my-4 ml-4 h-[calc(100vh-32px)] w-72 rounded-xl transition-transform duration-300 xl:translate-x-0 border border-green-100`}
+      } fixed inset-0 z-50 w-72 rounded-xl m-4 transition-transform duration-300 xl:translate-x-0 border border-green-100`}
     >
       <div className={`relative`}>
         <Link
@@ -56,12 +56,12 @@ export function Sidenav({ brandImg, brandName, routes }) {
       </div>
       <div className="m-4">
         {routes.map(({ layout, title, pages }, key) => (
-          <ul key={key} className="mb-4 flex flex-col gap-1">
+          <ul key={key} className="mb-3 flex flex-col gap-1">
             {title && (
               <li className="mx-3.5 mt-4 mb-2">
                 <Typography
                   variant="small"
-                  color={sidenavType === "colorize" ? "white" : "green"} // ganti ke green
+                  color={sidenavType === "colorize" ? "white" : "green"} 
                   className="font-black uppercase opacity-75"
                 >
                   {title}

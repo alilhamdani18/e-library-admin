@@ -7,23 +7,41 @@ import {
   Avatar,
   Chip,
   Button,
+  Input,
+  Select,
+  Option,
 } from "@material-tailwind/react";
 import { authorsTableData } from "@/data";
 
 export function Users() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const rowsPerPage = 10;
 
-  const totalPages = Math.ceil(authorsTableData.length / rowsPerPage);
+  const filteredData = authorsTableData.filter(({ name, email, address, status }) => {
+    const lowerSearch = searchTerm.toLowerCase();
+    const matchesSearch =
+      name.toLowerCase().includes(lowerSearch) ||
+      email.toLowerCase().includes(lowerSearch) ||
+      address.toLowerCase().includes(lowerSearch) ||
+      status.toLowerCase().includes(lowerSearch);
 
-  // Reset halaman jika data berubah dan halaman saat ini tidak valid
+    const matchesStatus = statusFilter === "all" || status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
   useEffect(() => {
     if (currentPage > totalPages) {
-      setCurrentPage(totalPages || 1); // kalau totalPages 0, set ke 1
+      setCurrentPage(totalPages || 1);
     }
-  }, [currentPage, totalPages]);
+  }, [filteredData, currentPage, totalPages]);
 
-  const currentData = authorsTableData.slice(
+  const currentData = filteredData.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
@@ -37,16 +55,45 @@ export function Users() {
   return (
     <div className="mt-12 mb-8 flex flex-col gap-6">
       <Card className="shadow-lg">
-        <CardHeader variant="gradient" color="green" className="mb-6 p-6">
+        <CardHeader variant="gradient" color="green" className="mb-0 p-6">
           <Typography variant="h5" color="white" className="font-bold">
             Daftar Pengguna
           </Typography>
         </CardHeader>
+
+        {/* Filter & Search */}
+        <div className="flex flex-col sm:flex-row gap-4 px-6 py-4 bg-gray-50 border-b">
+          <Input
+            label="Cari Nama, Email, Alamat, atau Status"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full mb-2"
+            color="green"
+          />
+          <Select
+            label="Filter Status"
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-full"
+            color="green"
+          >
+            <Option value="all">Semua</Option>
+            <Option value="active">Active</Option>
+            <Option value="purna">Purna</Option>
+          </Select>
+        </div>
+
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
           <table className="w-full min-w-[700px] table-auto text-left">
             <thead>
               <tr>
-                {["Nama", "Alamat", "Status", "Since", "Aksi"].map((el) => (
+                {["Nama", "Alamat", "Phone", "Status Anggota", "Since"].map((el) => (
                   <th
                     key={el}
                     className="border-b border-blue-gray-100 py-3 px-5"
@@ -63,7 +110,7 @@ export function Users() {
             </thead>
             <tbody>
               {currentData.map(
-                ({ img, name, email, job, online, date }, index) => {
+                ({ img, name, email, status, address, phone, date }, index) => {
                   const className = `py-3 px-5 ${
                     index === currentData.length - 1
                       ? ""
@@ -72,7 +119,7 @@ export function Users() {
 
                   return (
                     <tr
-                      key={`${name}-${(currentPage - 1) * rowsPerPage + index}`} // unique key
+                      key={`${name}-${(currentPage - 1) * rowsPerPage + index}`}
                       className="hover:bg-blue-gray-50 transition-colors"
                     >
                       <td className={className}>
@@ -99,17 +146,19 @@ export function Users() {
                       </td>
                       <td className={className}>
                         <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {job[0]}
+                          {address}
                         </Typography>
-                        <Typography className="text-xs text-blue-gray-400">
-                          {job[1]}
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                          {phone}
                         </Typography>
                       </td>
                       <td className={className}>
                         <Chip
                           variant="gradient"
-                          color={online ? "green" : "red"}
-                          value={online ? "Online" : "Offline"}
+                          color={status === "active" ? "green" : "blue"}
+                          value={status === "active" ? "Active" : "Purna"}
                           className="py-0.5 px-3 text-xs font-medium w-fit"
                         />
                       </td>
@@ -118,19 +167,6 @@ export function Users() {
                           {date}
                         </Typography>
                       </td>
-                      <td className={className}>
-                        <Button
-                          size="sm"
-                          color="blue"
-                          variant="gradient"
-                          className="mr-2"
-                        >
-                          Edit
-                        </Button>
-                        <Button size="sm" color="red" variant="gradient">
-                          Hapus
-                        </Button>
-                      </td>
                     </tr>
                   );
                 }
@@ -138,10 +174,11 @@ export function Users() {
             </tbody>
           </table>
         </CardBody>
+
         {/* Pagination Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-blue-gray-100">
           <div className="text-sm text-blue-gray-600 select-none">
-            Total Data: {authorsTableData.length}
+            Total Data: {filteredData.length}
           </div>
           <div className="flex items-center gap-3 mt-3 sm:mt-0">
             <Button

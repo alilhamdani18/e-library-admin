@@ -46,7 +46,7 @@ export function Profile() {
       <Card className="w-full max-w-5xl p-4 shadow-lg rounded-xl">
         <CardHeader
           floated={false}
-          className="h-52 mb-4 bg-gradient-to-tr from-blue-600 to-indigo-500 flex justify-center items-center relative"
+          className="h-52 mb-4 bg-gradient-to-tr from-green-600 to-teal-500 flex justify-center items-center relative"
         >
           <div className="flex flex-col items-center">
             <Avatar

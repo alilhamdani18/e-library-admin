@@ -1,6 +1,6 @@
 import {
   BookOpenIcon ,
-  DocumentTextIcon ,
+  ClockIcon ,
   UsersIcon,
   DocumentCheckIcon ,
 } from "@heroicons/react/24/solid";
@@ -10,6 +10,17 @@ export const statisticsCardsData = [
     color: "green",
     icon: BookOpenIcon ,
     title: "Jumlah Buku",
+    value: "$53k",
+    footer: {
+      color: "text-green-500",
+      value: "+55%",
+      label: "than last week",
+    },
+  },
+  {
+    color: "blue",
+    icon: BookOpenIcon ,
+    title: "Buku Tersedia",
     value: "$53k",
     footer: {
       color: "text-green-500",
@@ -30,8 +41,8 @@ export const statisticsCardsData = [
   },
   {
     color: "orange",
-    icon: DocumentTextIcon ,
-    title: "Buku Dipinjam",
+    icon: DocumentCheckIcon ,
+    title: "Sedang Dipinjam",
     value: "3,462",
     footer: {
       color: "text-red-500",
@@ -41,8 +52,8 @@ export const statisticsCardsData = [
   },
   {
     color: "teal",
-    icon: DocumentCheckIcon ,
-    title: "Buku Dikembalikan",
+    icon: ClockIcon ,
+    title: "Status Pending",
     value: "$103,430",
     footer: {
       color: "text-green-500",
@@ -50,6 +61,8 @@ export const statisticsCardsData = [
       label: "than yesterday",
     },
   },
+  
 ];
+
 
 export default statisticsCardsData;
