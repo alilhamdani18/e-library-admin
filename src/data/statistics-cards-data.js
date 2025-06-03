@@ -7,6 +7,17 @@ import {
 
 export const statisticsCardsData = [
   {
+    color: "red",
+    icon: UsersIcon,
+    title: "Jumlah Pengguna",
+    value: "2,300",
+    footer: {
+      color: "text-green-500",
+      value: "+3%",
+      label: "than last month",
+    },
+  },
+  {
     color: "green",
     icon: BookOpenIcon ,
     title: "Jumlah Buku",
@@ -17,6 +28,7 @@ export const statisticsCardsData = [
       label: "than last week",
     },
   },
+  
   {
     color: "blue",
     icon: BookOpenIcon ,
@@ -28,17 +40,7 @@ export const statisticsCardsData = [
       label: "than last week",
     },
   },
-  {
-    color: "red",
-    icon: UsersIcon,
-    title: "Jumlah Pengguna",
-    value: "2,300",
-    footer: {
-      color: "text-green-500",
-      value: "+3%",
-      label: "than last month",
-    },
-  },
+  
   {
     color: "orange",
     icon: DocumentCheckIcon ,

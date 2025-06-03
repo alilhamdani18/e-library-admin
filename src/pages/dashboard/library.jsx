@@ -331,6 +331,7 @@ export function Library() {
               <input
                 id="file-upload-edit"
                 type="file"
+                // value={formData.img}
                 accept="image/*"
                 className="hidden"
                 onChange={handleFileChange}

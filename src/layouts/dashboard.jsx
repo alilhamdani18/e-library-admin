@@ -25,15 +25,6 @@ export function Dashboard() {
       <div className="p-4 xl:ml-80">
         <DashboardNavbar />
         
-        <IconButton
-          size="lg"
-          color="white"
-          className="fixed bottom-8 right-8 z-40 rounded-full shadow-blue-gray-900/10"
-          ripple={false}
-          
-        >
-       
-        </IconButton>
         <Routes>
           {routes.map(
             ({ layout, pages }) =>

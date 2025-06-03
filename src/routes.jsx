@@ -3,9 +3,9 @@ import {
   UserCircleIcon,
   BookOpenIcon ,
   DocumentArrowDownIcon ,
-  ServerStackIcon,
+  UserIcon,
   UsersIcon ,
-  TagIcon 
+  ArchiveBoxIcon 
 } from "@heroicons/react/24/solid";
 import { Home, Profile, Library, Users, LoanRequest, LoanHistory } from "@/pages/dashboard";
 import { SignIn } from "@/pages/auth";
@@ -45,13 +45,13 @@ export const routes = [
         element: <LoanRequest />,
       },
       {
-        icon: <TagIcon   {...icon} />,
+        icon: <ArchiveBoxIcon   {...icon} />,
         name: "Loan History",
         path: "/loan-history",
         element: <LoanHistory />,
       },
       {
-        icon: <UserCircleIcon {...icon} />,
+        icon: <UserIcon  {...icon} />,
         name: "profile",
         path: "/profile",
         element: <Profile />,
@@ -62,7 +62,7 @@ export const routes = [
     layout: "auth",
     pages: [
       {
-        icon: <ServerStackIcon {...icon} />,
+        icon: <UserCircleIcon   {...icon} />,
         name: "log out",
         path: "/sign-in",
         element: <SignIn />,
