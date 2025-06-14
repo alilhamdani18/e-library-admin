@@ -325,68 +325,75 @@ export function Library() {
               </Typography>
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
               {currentBooks.map((book) => (
                 <Card
                   key={book.id}
-                  className="border border-gray-200 shadow-md rounded-md overflow-hidden flex flex-col justify-between"
+                  className="border border-gray-200 shadow-md overflow-hidden flex flex-row sm:flex-col h-full"
                 >
-                  <CardHeader floated={false} color="gray" className="h-56">
-                    <img 
-                      src={book.coverUrl || "/img/default-book.jpg"} 
-                      alt={book.title} 
-                      className="h-full w-full object-cover" 
+                  {/* Card Header */}
+                  <CardHeader
+                    floated={false}
+                    color="gray"
+                    className="h-56 flex-shrink-0"
+                  >
+                    <img
+                      src={book.coverUrl || "/img/default-book.jpg"}
+                      alt={book.title}
+                      className="w-36 h-full sm:w-full object-cover"
                     />
                   </CardHeader>
 
-                  <CardBody className="py-1 px-4 flex-1">
-                    <Typography variant="h6" color="blue-gray" className="mb-1">
-                      {book.title}
-                    </Typography>
-                    <Typography variant="small" className="text-indigo-500 mb-1">
-                      {book.author} &middot; {book.publicationYear || book.year}
-                    </Typography>
-                    <Typography variant="small" className="text-gray-600 mb-2 line-clamp-3">
-                      {book.description}
-                    </Typography>
-                    <Typography variant="small" className="text-gray-600">
-                      Jumlah Halaman: {book.pages}
-                    </Typography>
-                    <Typography variant="small" className="text-gray-600 mb-2">
-                      Stok Tersedia: {book.availableStock || 0}
-                    </Typography>
-                    {/* {book.pages && (
-                    )} */}
-                    <Typography variant="small" className="text-yellow-800 font-semibold mb-1">
-                      Rating: {book.rating || "0"} / 5
-                    </Typography>
-                    <Typography
-                      variant="small"
-                      className="text-red-400 font-medium flex items-center gap-1"
-                    >
-                      <HeartIcon className="h-4 w-4" /> {book.likes || 0} suka
-                    </Typography>
-                  </CardBody>
+                  {/* Card Body + Footer */}
+                  <div className="mt-2 flex flex-col justify-between flex-1">
+                    <CardBody className="py-1 px-4 flex-1">
+                      <Typography variant="h6" color="blue-gray" className="">
+                        {book.title}
+                      </Typography>
+                      <Typography variant="small" className="text-green-500 mb-2">
+                        {book.author} &middot; {book.publicationYear || book.year}
+                      </Typography>
+                      <Typography variant="" className="text-gray-600 text-sm mb-2 line-clamp-3">
+                        {book.description}
+                      </Typography>
+                      <Typography variant="small" className="text-gray-600 font-bold">
+                        Jumlah Halaman: {book.pages}
+                      </Typography>
+                      <Typography variant="small" className="text-gray-600 mb-2 font-bold">
+                        Stok Tersedia: {book.availableStock || 0}
+                      </Typography>
+                      <Typography variant="small" className="text-yellow-800 font-semibold mb-1">
+                        Rating: {book.rating || "0"} / 5
+                      </Typography>
+                      <Typography
+                        variant="small"
+                        className="text-red-400 font-medium flex items-center gap-1"
+                      >
+                        <HeartIcon className="h-4 w-4" /> {book.likes || 0} suka
+                      </Typography>
+                    </CardBody>
 
-                  <CardFooter className="flex gap-2 px-4 pb-4">
-                    <Button 
-                      size="md" 
-                      color="blue" 
-                      onClick={() => handleEdit(book.id)}
-                      disabled={loading}
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      size="md" 
-                      color="red" 
-                      onClick={() => handleDelete(book.id)}
-                      disabled={loading}
-                    >
-                      Hapus
-                    </Button>
-                  </CardFooter>
+                    <CardFooter className="flex gap-2 px-4 pb-4">
+                      <Button
+                        size="sm"
+                        color="blue"
+                        onClick={() => handleEdit(book.id)}
+                        disabled={loading}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        color="red"
+                        onClick={() => handleDelete(book.id)}
+                        disabled={loading}
+                      >
+                        Hapus
+                      </Button>
+                    </CardFooter>
+                  </div>
                 </Card>
+
               ))}
             </div>
           )}
@@ -433,9 +440,9 @@ export function Library() {
       </Card>
 
       {/* Modal Tambah Buku */}
-      <Dialog open={openAddModal} handler={() => setOpenAddModal(!openAddModal)} size="xl">
+      <Dialog open={openAddModal} handler={() => setOpenAddModal(!openAddModal)} size="md">
         <DialogHeader className="justify-center">Tambah Buku Baru</DialogHeader>
-        <DialogBody divider>
+        <DialogBody divider className="max-h-[80vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Upload Cover */}
             <div
@@ -532,9 +539,9 @@ export function Library() {
       </Dialog>
 
       {/* Modal Edit Buku */}
-      <Dialog open={openEditModal} handler={() => setOpenEditModal(!openEditModal)} size="xl">
+      <Dialog open={openEditModal} handler={() => setOpenEditModal(!openEditModal)} size="md">
         <DialogHeader className="justify-center">Edit Buku</DialogHeader>
-        <DialogBody divider>
+        <DialogBody divider className="max-h-[80vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div
               className="flex flex-col items-center justify-center border-2 border-dashed border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors rounded-xl p-6 text-center cursor-pointer h-full"
@@ -550,6 +557,7 @@ export function Library() {
                 type="file"
                 accept="image/*"
                 className="hidden"
+                value={formData.file}
                 onChange={handleFileChange}
               />
             </div>
