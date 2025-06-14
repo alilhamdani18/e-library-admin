@@ -5,16 +5,44 @@ import {
   Button,
   Typography,
 } from "@material-tailwind/react";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../configs/firebase"; // sesuaikan path-nya
 import logo from "/img/e-library-icon.png";
 
 export function SignIn() {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleSignIn = (e) => {
+  const togglePassword = () => setShowPassword((prev) => !prev);
+
+  const handleSignIn = async (e) => {
     e.preventDefault();
-    // Di sini bisa tambahkan logika autentikasi kalau sudah ada
-    navigate("/dashboard");
+    setError("");
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      console.log(email, password)
+
+      if (userSnap.exists() && userSnap.data().role === "librarian") {
+        navigate("/dashboard");
+      } else {
+        setError("Akun ini tidak memiliki akses sebagai pustakawan.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Email atau password salah.");
+    }
   };
 
   return (
@@ -31,6 +59,11 @@ export function SignIn() {
         </div>
 
         <form className="space-y-6" onSubmit={handleSignIn}>
+          {error && (
+            <Typography color="red" className="text-sm text-center">
+              {error}
+            </Typography>
+          )}
           <div>
             <Typography variant="small" color="blue-gray" className="font-medium mb-1">
               Email
@@ -39,6 +72,8 @@ export function SignIn() {
               size="lg"
               placeholder="you@example.com"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="transition-all duration-300 !border-t-blue-gray-200 focus:!border-t-blue-600 focus:ring-2 focus:ring-blue-100"
               labelProps={{
                 className: "before:content-none after:content-none",
@@ -50,15 +85,29 @@ export function SignIn() {
             <Typography variant="small" color="blue-gray" className="font-medium mb-1">
               Password
             </Typography>
-            <Input
-              type="password"
-              size="lg"
-              placeholder="********"
-              className="transition-all duration-300 !border-t-blue-gray-200 focus:!border-t-blue-600 focus:ring-2 focus:ring-blue-100"
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                size="lg"
+                placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pr-10 transition-all duration-300 !border-t-blue-gray-200 focus:!border-t-blue-600 focus:ring-2 focus:ring-blue-100"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+              <div
+                className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-blue-gray-400"
+                onClick={togglePassword}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center justify-between text-sm">

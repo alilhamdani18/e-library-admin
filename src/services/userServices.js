@@ -17,7 +17,10 @@ export const userService = {
   getAllUsers: async () => {
     try {
       const response = await api.get('/api/users');
-      return response.data.data;
+      const allUser = response.data.data;
+
+      const filteredUsers = allUser.filter(user => user.role !== 'librarian');
+      return filteredUsers;
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
