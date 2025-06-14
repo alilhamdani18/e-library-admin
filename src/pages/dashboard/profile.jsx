@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardBody,
@@ -8,18 +8,28 @@ import {
   Button,
   Input,
 } from "@material-tailwind/react";
-
+import { librarianServices } from "@/services/librarianServices";
 export function Profile() {
   const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: "Richard Davis",
-    role: "Pustakawan",
-    bio: "Dedikasi tinggi dalam pengelolaan perpustakaan digital.",
-    email: "richard@example.com",
-    phone: "081234567890",
-    password: "e3afed0047b08059d0fada10f400c1e5", // hashed
-    photo: "/img/bruce-mars.jpeg",
-  });
+  const [profileData, setProfileData] = useState(null);
+  const [originalPhoto, setOriginalPhoto] = useState(null); // untuk upload file asli
+  const [loading, setLoading] = useState(true);
+
+  // Ambil data pustakawan dari API saat komponen dimuat
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await librarianServices.getLibrarianProfile(); // pastikan method ini ada
+        setProfileData(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Gagal mengambil profil:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
@@ -29,17 +39,36 @@ export function Profile() {
     const file = e.target.files[0];
     if (file) {
       const tempURL = URL.createObjectURL(file);
-      setProfileData({ ...profileData, photo: tempURL });
+      setOriginalPhoto(file);
+      setProfileData({ ...profileData, photo: tempURL }); // preview
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsEditing(false);
-    // Simpan ke server, hashing ulang jika ada perubahan password
+    try {
+      let updatedData = { ...profileData };
+
+      // Jika ada file baru, upload dulu dan dapatkan URL-nya
+      if (originalPhoto) {
+        const formData = new FormData();
+        formData.append("photo", originalPhoto);
+        const response = await librarianServices.uploadPhoto(formData); // pastikan method ini ada
+        updatedData.photo = response.url; // Sesuaikan key-nya
+      }
+
+      await librarianService.updateProfile(updatedData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Gagal memperbarui profil:", error);
+    }
   };
 
-  const maskedPassword = "•".repeat(16); // tampilkan sebagai titik
+  if (loading || !profileData) {
+    return <div className="text-center mt-10">Memuat data profil...</div>;
+  }
+
+  const maskedPassword = "•".repeat(16);
 
   return (
     <div className="flex justify-center mt-6 px-4">
@@ -93,7 +122,9 @@ export function Profile() {
                 </Typography>
                 <Typography variant="small" color="blue-gray" className="mt-4">
                   Password:{" "}
-                  <span className="font-mono tracking-widest">{maskedPassword}</span>
+                  <span className="font-mono tracking-widest">
+                    {maskedPassword}
+                  </span>
                 </Typography>
                 <div className="mt-6">
                   <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
@@ -147,16 +178,7 @@ export function Profile() {
                   className="font-mono"
                 />
               </div>
-              <div className="col-span-1 md:col-span-2">
-                <Input
-                  label="Konfirmasi Password"
-                  type="password"
-                  name="password"
-                  value=""
-                  onChange={handleChange}
-                  className="font-mono"
-                />
-              </div>
+              {/* Tambahan opsional untuk konfirmasi password bisa ditambahkan validasi nanti */}
               <div className="flex gap-3 mt-4">
                 <Button type="submit" color="blue">
                   Simpan

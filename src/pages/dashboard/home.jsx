@@ -1,50 +1,105 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Card,
   CardHeader,
   CardBody,
-  IconButton,
-  Menu,
-  MenuHandler,
-  MenuList,
-  MenuItem,
   Avatar,
   Tooltip,
   Progress,
 } from "@material-tailwind/react";
+import { BookOpenIcon, UserGroupIcon, ClockIcon } from "@heroicons/react/24/solid";
 
 import { StatisticsCard } from "@/widgets/cards";
-import { StatisticsChart } from "@/widgets/charts";
-import {
-  statisticsCardsData,
-  statisticsChartsData,
-  projectsTableData,
-} from "@/data";
-import { CheckCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { librarianServices } from "@/services/librarianServices";
+import { projectsTableData } from "@/data";
 
 export function Home() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await librarianServices.getDashboardStats();
+        setStats(response); 
+        console.log(response)
+      } catch (error) {
+        console.error("Gagal mengambil data dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const cardData = [
+    {
+      color: "green",
+      title: "Total Buku",
+      value: stats?.totalBooks || 0,
+      icon: "book",
+    },
+    {
+      color: "teal",
+      title: "Stok Tersedia",
+      value: stats?.availableBooks || 0,
+      icon: "book-open",
+    },
+    {
+      color: "red",
+      title: "Total Pengguna",
+      value: stats?.totalUsers || 0,
+      icon: "user-group",
+    },
+    {
+      color: "blue",
+      title: "Pinjaman Aktif",
+      value: stats?.activeLoans || 0,
+      icon: "clock",
+    },
+    {
+      color: "orange",
+      title: "Status Pending",
+      value: stats?.pendingLoans || 0,
+      icon: "clock",
+    },
+  ];
+
+  const iconMap = {
+    book: BookOpenIcon,
+    "book-open": BookOpenIcon,
+    "user-group": UserGroupIcon,
+    clock: ClockIcon,
+  };
+
   return (
     <div className="mt-12">
       <div className="mb-12 grid gap-y-6 gap-x-6 md:grid-cols-2 xl:grid-cols-4">
-        {statisticsCardsData.map(({ icon, title, footer, ...rest }) => (
-          <StatisticsCard
-            key={title}
-            {...rest}
-            title={title}
-            icon={React.createElement(icon, {
-              className: "w-6 h-6 text-white",
-            })}
-            footer={
-              <Typography className="font-normal text-blue-gray-600">
-                <strong className={footer.color}>{footer.value}</strong>
-                &nbsp;{footer.label}
-              </Typography>
-            }
-          />
-        ))}
+        {loading ? (
+          <Typography>Memuat statistik...</Typography>
+        ) : (
+          cardData.map(({ color, title, value, icon }) => (
+            <StatisticsCard
+              key={title}
+              color={color}
+              title={title}
+              value={value.toString()}
+              icon={React.createElement(iconMap[icon], {
+                className: "w-6 h-6 text-white",
+              })}
+              footer={
+                <Typography className="font-normal text-blue-gray-600">
+                  <strong className="text-green-500">+0%</strong> dari bulan lalu
+                </Typography>
+              }
+            />
+          ))
+        )}
       </div>
-      
+
       <div className="mb-4">
         <Card className="overflow-hidden xl:col-span-2 border border-blue-gray-100 shadow-sm">
           <CardHeader
@@ -65,13 +120,12 @@ export function Home() {
                 <strong>30 done</strong> this month
               </Typography>
             </div>
-            
           </CardHeader>
           <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
             <table className="w-full min-w-[640px] table-auto">
               <thead>
                 <tr>
-                  {["book title", "members", "tgl pinjam", "tgl dikembalikan"].map(
+                  {["book title", "users", "tgl pinjam", "tgl dikembalikan"].map(
                     (el) => (
                       <th
                         key={el}
@@ -116,7 +170,6 @@ export function Home() {
                               >
                                 {author}
                               </Typography>
-                              
                             </div>
                           </div>
                         </td>
@@ -167,7 +220,6 @@ export function Home() {
             </table>
           </CardBody>
         </Card>
-       
       </div>
     </div>
   );

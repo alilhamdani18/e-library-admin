@@ -9,43 +9,67 @@ import {
   Button,
   Dialog,
 } from "@material-tailwind/react";
+import { loanServices } from "@/services/loanServices";
 
-const dummyData = [
-  {
-    img: "/img/team-2.jpeg",
-    user: "Ahmad Nur",
-    email: "ahmad@mail.com",
-    title: "Pemrograman Java",
-    status: true,
-    borrowedDate: "18/05/2025",
-    returnedDate: "25/05/2025",
-  },
-  {
-    img: "/img/team-1.jpeg",
-    user: "Siti Rahma",
-    email: "siti@mail.com",
-    title: "Flutter untuk Pemula",
-    status: false,
-    borrowedDate: "10/05/2025",
-    returnedDate: "17/05/2025",
-  },
-];
+
 
 export function LoanHistory() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [loanHistory, setLoanHistory] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
-  const [data, setData] = useState(dummyData);
-  const totalPages = Math.ceil(data.length / rowsPerPage);
+  const totalPages = Math.ceil(loanHistory.length / rowsPerPage);
   const [selectedBook, setSelectedBook] = useState(null);
   const [openModal, setOpenModal] = useState(false);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages || 1);
+    fetchLoanHistory();
+  }, []);
+
+  const fetchLoanHistory = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await loanServices.getAllLoans();
+      
+      // Transform data jika struktur dari API berbeda
+      const transformedData = data.map(loan => ({
+        id: loan.id,
+        img: loan.user?.profileImageUrl || "/img/default-avatar.jpeg",
+        user: loan.user?.name || "Unknown User",
+        email: loan.user?.email || "No Email",
+        title: loan.book?.title || "Unknown Book",
+        status: loan.status,
+        borrowedDate: loan.borrowedDate || loan.createdAt,
+        returnedDate: loan.returnedDate || "-",
+      }));
+      
+      setLoanHistory(transformedData);
+      console.log("Type of loans:", typeof data, Array.isArray(data));
+      console.log("Loans data:", data);
+      console.log("Transformed loans:", transformedData);
+    } catch (err) {
+      setError("Gagal memuat data Loans");
+      console.error("Error fetching loans:", err);
+      
+      // Fallback ke dummy data untuk testing
+      console.log("Using dummy data as fallback");
+      setLoanHistory(dummyData);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
 
-  const currentData = data.slice(
+  const currentData = loanHistory.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
@@ -70,12 +94,12 @@ export function LoanHistory() {
     const now = new Date();
     const formattedDate = now.toLocaleDateString("id-ID");
 
-    const updatedData = [...data];
+    const updatedData = [...loanHistory];
     const bookIndex = selectedBook.index;
     updatedData[bookIndex].returnedDate = formattedDate;
     updatedData[bookIndex].status = false;
 
-    setData(updatedData);
+    setLoanHistory(updatedData); // ✅ Fixed: menggunakan setLoanHistory
     handleCloseModal();
   };
 
@@ -88,37 +112,56 @@ export function LoanHistory() {
           </Typography>
         </CardHeader>
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
-          <table className="w-full min-w-[700px] table-auto text-left">
-            <thead>
-              <tr>
-                {[
-                  "Pengguna",
-                  "Judul Buku",
-                  "Status",
-                  "Tgl Pinjam",
-                  "Tgl Dikembalikan",
-                  "Aksi",
-                ].map((el) => (
-                  <th
-                    key={el}
-                    className="border-b border-blue-gray-100 py-3 px-5"
-                  >
-                    <Typography
-                      variant="small"
-                      className="text-xs font-bold uppercase text-blue-gray-500"
+          {loading ? (
+            <div className="p-6 text-center text-blue-gray-500">
+              Memuat data pinjaman...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-center text-red-500">{error}</div>
+          ) : loanHistory.length === 0 ? (
+            <div className="p-6 text-center text-blue-gray-500">
+              Tidak ada data peminjaman
+            </div>
+          ) : (
+            <table className="w-full min-w-[700px] table-auto text-left">
+              <thead>
+                <tr>
+                  {[
+                    "Pengguna",
+                    "Judul Buku",
+                    "Status",
+                    "Tgl Pinjam",
+                    "Tgl Dikembalikan",
+                    "Aksi",
+                  ].map((el) => (
+                    <th
+                      key={el}
+                      className="border-b border-blue-gray-100 py-3 px-5"
                     >
-                      {el}
-                    </Typography>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.map(
-                (
-                  { img, user, email, title, status, borrowedDate, returnedDate },
-                  index
-                ) => {
+                      <Typography
+                        variant="small"
+                        className="text-xs font-bold uppercase text-blue-gray-500"
+                      >
+                        {el}
+                      </Typography>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.map((loan, index) => {
+                  // ✅ Destructuring dengan safety check
+                  const {
+                    id,
+                    img = "/img/default-avatar.jpeg",
+                    user = "Unknown User",
+                    email = "No Email",
+                    title = "Unknown Book",
+                    status,
+                    borrowedDate = "-",
+                    returnedDate = "-",
+                  } = loan || {};
+
                   const className = `py-3 px-5 ${
                     index === currentData.length - 1
                       ? ""
@@ -127,7 +170,7 @@ export function LoanHistory() {
 
                   return (
                     <tr
-                      key={`${user}-${(currentPage - 1) * rowsPerPage + index}`}
+                      key={id || `loan-${(currentPage - 1) * rowsPerPage + index}`}
                       className="hover:bg-blue-gray-50 transition-colors"
                     >
                       <td className={className}>
@@ -160,8 +203,8 @@ export function LoanHistory() {
                       <td className={className}>
                         <Chip
                           variant="gradient"
-                          color={status ? "green" : "blue"}
-                          value={status ? "Dipinjam" : "Dikembalikan"}
+                          color={status == "approved" ? "green" : "blue"}
+                          value={status == "approved" ? "Dipinjam" : "Dikembalikan"}
                           className="py-0.5 px-3 text-xs font-medium w-fit"
                         />
                       </td>
@@ -182,15 +225,7 @@ export function LoanHistory() {
                           variant="gradient"
                           onClick={() =>
                             handleOpenModal(
-                              {
-                                img,
-                                user,
-                                email,
-                                title,
-                                status,
-                                borrowedDate,
-                                returnedDate,
-                              },
+                              loan,
                               (currentPage - 1) * rowsPerPage + index
                             )
                           }
@@ -200,15 +235,15 @@ export function LoanHistory() {
                       </td>
                     </tr>
                   );
-                }
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          )}
         </CardBody>
 
         <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-blue-gray-100">
           <div className="text-sm text-blue-gray-600 select-none">
-            Total Data: {data.length}
+            Total Data: {loanHistory.length}
           </div>
           <div className="flex items-center gap-3 mt-3 sm:mt-0">
             <Button
@@ -220,12 +255,12 @@ export function LoanHistory() {
               Prev
             </Button>
             <Typography className="text-sm font-semibold text-blue-gray-700">
-              {currentPage} / {totalPages}
+              {currentPage} / {totalPages || 1}
             </Typography>
             <Button
               size="sm"
               variant="outlined"
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || totalPages === 0}
               onClick={() => goToPage(currentPage + 1)}
             >
               Next

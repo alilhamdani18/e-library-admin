@@ -1,3 +1,4 @@
+// src/pages/Users.jsx
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -11,35 +12,62 @@ import {
   Select,
   Option,
 } from "@material-tailwind/react";
-import { authorsTableData } from "@/data";
+import { userService } from "@/services/userServices";
+import { DeviceTabletIcon } from "@heroicons/react/24/solid";
 
 export function Users() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const rowsPerPage = 10;
 
-  const filteredData = authorsTableData.filter(({ name, email, address, status }) => {
-    const lowerSearch = searchTerm.toLowerCase();
-    const matchesSearch =
-      name.toLowerCase().includes(lowerSearch) ||
-      email.toLowerCase().includes(lowerSearch) ||
-      address.toLowerCase().includes(lowerSearch) ||
-      status.toLowerCase().includes(lowerSearch);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-    const matchesStatus = statusFilter === "all" || status === statusFilter;
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await userService.getAllUsers();
+      setUsers(data);
+      console.log("Type of users:", typeof data, Array.isArray(data));
+      console.log("Users data:", data);
+    } catch (err) {
+      setError("Gagal memuat data users");
+      console.error("Error fetching users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+    // Filter & pencarian
+  const filteredData = users.filter(({ name, email, address, status }) => {
+    const lower = searchTerm.toLowerCase();
+    const matchesSearch =
+      name.toLowerCase().includes(lower) ||
+      email.toLowerCase().includes(lower) ||
+      address.toLowerCase().includes(lower) ||
+      status.toLowerCase().includes(lower);
+
+    const matchesStatus =
+      statusFilter === "all" || status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
+
+
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages || 1);
     }
-  }, [filteredData, currentPage, totalPages]);
+  }, [filteredData, totalPages, currentPage]);
 
   const currentData = filteredData.slice(
     (currentPage - 1) * rowsPerPage,
@@ -51,6 +79,35 @@ export function Users() {
     if (page > totalPages) page = totalPages;
     setCurrentPage(page);
   };
+
+  // // Loading state
+  //   if (loading && users.length === 0) {
+  //     return (
+  //       <Card className="mt-8 mb-6 border border-blue-gray-100 shadow-lg">
+  //         <CardBody className="p-6 text-center">
+  //           <Typography variant="h6" color="blue-gray">
+  //             Memuat data users...
+  //           </Typography>
+  //         </CardBody>
+  //       </Card>
+  //     );
+  //   }
+  
+    // Error state
+    // if (error) {
+    //   return (
+    //     <Card className="mt-8 mb-6 border border-red-100 shadow-lg">
+    //       <CardBody className="p-6 text-center">
+    //         <Typography variant="h6" color="red">
+    //           {error}
+    //         </Typography>
+    //         <Button color="blue" onClick={fetchUsers} className="mt-4">
+    //           Coba Lagi
+    //         </Button>
+    //       </CardBody>
+    //     </Card>
+    //   );
+    // }
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-6">
@@ -89,53 +146,57 @@ export function Users() {
           </Select>
         </div>
 
+        {/* Body dengan handling loading/error */}
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
-          <table className="w-full min-w-[700px] table-auto text-left">
-            <thead>
-              <tr>
-                {["Nama", "Alamat", "Phone", "Status Anggota", "Since"].map((el) => (
-                  <th
-                    key={el}
-                    className="border-b border-blue-gray-100 py-3 px-5"
-                  >
-                    <Typography
-                      variant="small"
-                      className="text-xs font-bold uppercase text-blue-gray-500"
+          {loading ? (
+            <div className="p-6 text-center text-blue-gray-500">
+              Memuat data pengguna...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-center text-red-500">{error}</div>
+          ) : (
+            <table className="w-full min-w-[700px] table-auto text-left">
+              <thead>
+                <tr>
+                  {["Nama", "Alamat", "Phone", "Status Anggota", "Role",  "Since"].map((el) => (
+                    <th
+                      key={el}
+                      className="border-b border-blue-gray-100 py-3 px-5"
                     >
-                      {el}
-                    </Typography>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.map(
-                ({ img, name, email, status, address, phone, date }, index) => {
+                      <Typography
+                        variant="small"
+                        className="text-xs font-bold uppercase text-blue-gray-500"
+                      >
+                        {el}
+                      </Typography>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.map(({ profileImageUrl, name, email, address, phone, status, role, createdAt }, idx) => {
                   const className = `py-3 px-5 ${
-                    index === currentData.length - 1
-                      ? ""
-                      : "border-b border-blue-gray-100"
+                    idx === currentData.length - 1 ? "" : "border-b border-blue-gray-100"
                   }`;
+
+                  const date = new Date(createdAt).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  });
+                  console.log("createdAt:", createdAt);
+
 
                   return (
                     <tr
-                      key={`${name}-${(currentPage - 1) * rowsPerPage + index}`}
+                      key={`${name}-${(currentPage - 1) * rowsPerPage + idx}`}
                       className="hover:bg-blue-gray-50 transition-colors"
                     >
                       <td className={className}>
                         <div className="flex items-center gap-4">
-                          <Avatar
-                            src={img}
-                            alt={name}
-                            size="sm"
-                            variant="rounded"
-                          />
+                          <Avatar src={profileImageUrl} alt={name} size="lg" variant="rounded" />
                           <div>
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-semibold"
-                            >
+                            <Typography variant="small" color="blue-gray" className="font-semibold">
                               {name}
                             </Typography>
                             <Typography className="text-xs text-blue-gray-400">
@@ -155,12 +216,17 @@ export function Users() {
                         </Typography>
                       </td>
                       <td className={className}>
-                        <Chip
-                          variant="gradient"
-                          color={status === "active" ? "green" : "blue"}
-                          value={status === "active" ? "Active" : "Purna"}
-                          className="py-0.5 px-3 text-xs font-medium w-fit"
-                        />
+                          <Chip
+                            variant="gradient"
+                            color={status === "active" ? "green" : "blue"}
+                            value={status === "active" ? "Active" : "Purna"}
+                            className="py-0.5 px-3 text-xs font-medium w-fit"
+                          />
+                        </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-center text-blue-gray-600">
+                          {role}
+                        </Typography>
                       </td>
                       <td className={className}>
                         <Typography className="text-xs font-semibold text-blue-gray-600">
@@ -169,10 +235,11 @@ export function Users() {
                       </td>
                     </tr>
                   );
-                }
-              )}
-            </tbody>
-          </table>
+                })}
+
+              </tbody>
+            </table>
+          )}
         </CardBody>
 
         {/* Pagination Controls */}

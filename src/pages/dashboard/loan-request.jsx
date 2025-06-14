@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Button,
@@ -8,39 +8,52 @@ import {
   CardFooter,
 } from "@material-tailwind/react";
 import { BookOpenIcon, UserIcon } from "@heroicons/react/24/outline";
+import { loanServices } from "@/services/loanServices"; // pastikan path-nya benar
 
 export function LoanRequest() {
-  const [requests, setRequests] = useState([
-    {
-      id: "req1",
-      user: "Aisyah Nur",
-      bookTitle: "Filosofi Teras",
-      date: "2025-05-16",
-    },
-    {
-      id: "req2",
-      user: "Ahmad Ridho",
-      bookTitle: "Atomic Habits",
-      date: "2025-05-15",
-    },
-    {
-      id: "req3",
-      user: "ALIL HD",
-      bookTitle: "Belajar Cloud Computing",
-      date: "2025-05-23",
-    },
-  ]);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [buttonLoadingId, setButtonLoadingId] = useState(null);
 
-  const handleTerima = (id) => {
-    // Logika ketika permintaan diterima
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-    console.log(`Request ${id} diterima`);
+  const fetchRequests = async () => {
+    try {
+      const data = await loanServices.getAllRequest();
+      setRequests(data);
+    } catch (error) {
+      console.error("Gagal memuat data permintaan:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleTolak = (id) => {
-    // Logika ketika permintaan ditolak
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-    console.log(`Request ${id} ditolak`);
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const handleTerima = async (id) => {
+    setButtonLoadingId(id);
+    try {
+      await loanServices.approveLoan(id);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+      console.log(`Request ${id} diterima`);
+    } catch (error) {
+      console.error("Gagal menerima permintaan:", error);
+    } finally {
+      setButtonLoadingId(null);
+    }
+  };
+
+  const handleTolak = async (id) => {
+    setButtonLoadingId(id);
+    try {
+      await loanServices.rejectLoan(id);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+      console.log(`Request ${id} ditolak`);
+    } catch (error) {
+      console.error("Gagal menolak permintaan:", error);
+    } finally {
+      setButtonLoadingId(null);
+    }
   };
 
   return (
@@ -49,7 +62,9 @@ export function LoanRequest() {
         Konfirmasi Peminjaman Buku
       </Typography>
 
-      {requests.length === 0 ? (
+      {loading ? (
+        <Typography color="gray">Memuat data...</Typography>
+      ) : requests.length === 0 ? (
         <Typography color="gray">
           Tidak ada permintaan peminjaman saat ini.
         </Typography>
@@ -63,28 +78,41 @@ export function LoanRequest() {
                 className="bg-blue-gray-50 px-6 py-4"
               >
                 <Typography variant="h6" color="blue-gray">
-                  Permintaan dari {req.user}
+                  Permintaan dari {req.user?.name || "Pengguna"}
                 </Typography>
               </CardHeader>
               <CardBody className="flex flex-col gap-2 px-6">
                 <div className="flex items-center gap-2">
                   <BookOpenIcon className="h-5 w-5 text-blue-500" />
-                  <Typography>{req.bookTitle}</Typography>
+                  <Typography>
+                    {req.book?.title || "Judul tidak tersedia"}
+                  </Typography>
                 </div>
                 <div className="flex items-center gap-2">
                   <UserIcon className="h-5 w-5 text-green-500" />
-                  <Typography>{req.user}</Typography>
+                  <Typography>
+                    {req.user?.name || "Nama tidak tersedia"}
+                  </Typography>
                 </div>
                 <Typography className="text-sm text-gray-600">
-                  Tanggal Permintaan: {req.date}
+                  Tanggal Permintaan:{" "}
+                  {new Date(req.createdAt).toLocaleDateString()}
                 </Typography>
               </CardBody>
               <CardFooter className="flex gap-2 px-6 pb-4">
-                <Button color="green" onClick={() => handleTerima(req.id)}>
-                  Terima
+                <Button
+                  color="green"
+                  onClick={() => handleTerima(req.id)}
+                  disabled={buttonLoadingId === req.id}
+                >
+                  {buttonLoadingId === req.id ? "Memproses..." : "Terima"}
                 </Button>
-                <Button color="red" onClick={() => handleTolak(req.id)}>
-                  Tolak
+                <Button
+                  color="red"
+                  onClick={() => handleTolak(req.id)}
+                  disabled={buttonLoadingId === req.id}
+                >
+                  {buttonLoadingId === req.id ? "Memproses..." : "Tolak"}
                 </Button>
               </CardFooter>
             </Card>
