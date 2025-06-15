@@ -21,7 +21,7 @@ export function Users() {
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const rowsPerPage = 10;
 
@@ -45,18 +45,19 @@ export function Users() {
     }
   };
     // Filter & pencarian
-  const filteredData = users.filter(({ name, email, address, status }) => {
+  const filteredData = users.filter(({ name, email, address, role, phone }) => {
     const lower = searchTerm.toLowerCase();
     const matchesSearch =
       name.toLowerCase().includes(lower) ||
       email.toLowerCase().includes(lower) ||
       address.toLowerCase().includes(lower) ||
-      status.toLowerCase().includes(lower);
+      role.toLowerCase().includes(lower) ||
+      phone.toLowerCase().includes(lower);
 
-    const matchesStatus =
-      statusFilter === "all" || status === statusFilter;
+    const matchesRole =
+      roleFilter === "all" || role === roleFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
@@ -132,9 +133,9 @@ export function Users() {
           />
           <Select
             label="Filter Status"
-            value={statusFilter}
+            value={roleFilter}
             onChange={(val) => {
-              setStatusFilter(val);
+              setRoleFilter(val);
               setCurrentPage(1);
             }}
             className="w-full"

@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import {
   Avatar,
@@ -7,7 +7,11 @@ import {
   IconButton,
   Typography,
 } from "@material-tailwind/react";
+import { UserCircleIcon } from "@heroicons/react/24/solid";
+
 import { useMaterialTailwindController, setOpenSidenav } from "@/context";
+import { getAuth, signOut } from "firebase/auth";
+import { routes } from "@/routes";
 
 export function Sidenav({ brandImg, brandName, routes }) {
   const [controller, dispatch] = useMaterialTailwindController();
@@ -18,11 +22,27 @@ export function Sidenav({ brandImg, brandName, routes }) {
     transparent: "bg-transparent",
   };
 
+  const navigate = useNavigate();
+  const auth = getAuth();
+
+  const handleLogout = () => {
+      signOut(auth)
+        .then(() => {
+          navigate("/sign-in");
+        })
+        .catch((error) => {
+          console.error("Logout gagal:", error);
+        });
+  };
+  
+  const sidebarRoutes = routes.filter(route => route.layout === "dashboard");
+
+
   return (
     <aside
       className={`${sidenavTypes[sidenavType]} ${
         openSidenav ? "translate-x-0" : "-translate-x-80"
-      } fixed inset-0 z-50 w-72 rounded-xl m-4 transition-transform duration-300 xl:translate-x-0 border border-green-100`}
+      } fixed inset-0 z-50 w-72 rounded-xl m-4 transition-transform duration-300 xl:translate-x-0 border border-green-100 overflow-y-auto`}
     >
       <div className={`relative`}>
         <Link
@@ -55,7 +75,8 @@ export function Sidenav({ brandImg, brandName, routes }) {
        
       </div>
       <div className="m-4">
-        {routes.map(({ layout, title, pages }, key) => (
+
+        {sidebarRoutes.map(({ layout, title, pages }, key) => (
           <ul key={key} className="mb-3 flex flex-col gap-1">
             {title && (
               <li className="mx-3.5 mt-4 mb-2">
@@ -74,7 +95,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
                   {({ isActive }) => (
                     <Button
                       variant={isActive ? "gradient" : "text"}
-                      color="green" // cukup warna "green" saja
+                      color="green" 
                       className="flex items-center gap-4 px-4 capitalize"
                       fullWidth
                     >
@@ -90,8 +111,23 @@ export function Sidenav({ brandImg, brandName, routes }) {
                 </NavLink>
               </li>
             ))}
+              {/* <li className="mx-3.5 mt-4 mb-2">
+                <Button
+                  variant="text"
+                  color="blue-gray"
+                  onClick={handleLogout}
+                  className="hidden items-center gap-1 px-4 xl:flex normal-case"
+                >
+                  <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
+                  Logout
+                </Button>
+
+              </li> */}
+            <div>
+            </div>
           </ul>
         ))}
+        
       </div>
     </aside>
   );

@@ -9,6 +9,7 @@ import {
   Input,
 } from "@material-tailwind/react";
 import { librarianServices } from "@/services/librarianServices";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 export function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -17,20 +18,26 @@ export function Profile() {
 
   // Ambil data pustakawan dari API saat komponen dimuat
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await librarianServices.getLibrarianProfile(); // pastikan method ini ada
-        setProfileData(data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Gagal mengambil profil:", error);
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
   }, []);
+  const fetchProfile = async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
 
+      if (!user) throw new Error("User belum login");
+
+      const uid = user.uid; 
+
+      const data = await librarianServices.getLibrarianProfile(uid);
+      console.log(data);
+      setProfileData(data);
+    } catch (error) {
+      console.error("Gagal mengambil profil:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleChange = (e) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
   };
@@ -57,7 +64,7 @@ export function Profile() {
         updatedData.photo = response.url; // Sesuaikan key-nya
       }
 
-      await librarianService.updateProfile(updatedData);
+      await librarianServices.updateProfile(updatedData);
       setIsEditing(false);
     } catch (error) {
       console.error("Gagal memperbarui profil:", error);
@@ -79,7 +86,7 @@ export function Profile() {
         >
           <div className="flex flex-col items-center">
             <Avatar
-              src={profileData.photo}
+              src={profileData.profileImageUrl}
               alt="Profile Picture"
               size="xxl"
               variant="circular"
@@ -111,7 +118,9 @@ export function Profile() {
                 <Typography color="gray" className="mb-2">
                   {profileData.role}
                 </Typography>
-                <Typography color="blue-gray">{profileData.bio}</Typography>
+                <Typography color="blue-gray">
+                  {profileData.bio}
+                </Typography>
               </div>
               <div>
                 <Typography variant="small" color="blue-gray" className="mb-1">
@@ -121,7 +130,7 @@ export function Profile() {
                   Telepon: {profileData.phone}
                 </Typography>
                 <Typography variant="small" color="blue-gray" className="mt-4">
-                  Password:{" "}
+                  {" "}
                   <span className="font-mono tracking-widest">
                     {maskedPassword}
                   </span>

@@ -1,4 +1,5 @@
 import api from '../configs/api';
+import { getAuth } from "firebase/auth";
 
 export const librarianServices = {
   getDashboardStats: async () => {
@@ -13,7 +14,7 @@ export const librarianServices = {
   getLibrarianProfile: async (librarianId) => {
     try {
       const response = await api.get(`/api/librarian/profile/${librarianId}`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error(`Error fetching librarian profile: ${librarianId}`, error);
       throw error;
