@@ -22,15 +22,46 @@ import {
   setOpenSidenav,
 } from "@/context";
 import { getAuth, signOut } from "firebase/auth";
-
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../configs/firebase"; 
 export function DashboardNavbar() {
   const [controller, dispatch] = useMaterialTailwindController();
   const { fixedNavbar, openSidenav } = controller;
   const { pathname } = useLocation();
   const [layout, page] = pathname.split("/").filter((el) => el !== "");
+  const [profileData, setProfileData] = useState({});
+
 
   const navigate = useNavigate();
   const auth = getAuth();
+
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [])
+
+  const fetchUserProfile = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid); // diasumsikan kamu menyimpan profil di koleksi "users"
+      const userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        // console.log("Data profile:", data);
+        setProfileData(data);
+      } else {
+        console.log("User profile tidak ditemukan di Firestore.");
+      }
+    } else {
+      console.log("Tidak ada user yang login.");
+    }
+  };
+
+  
 
   const handleLogout = () => {
     signOut(auth)
@@ -84,11 +115,11 @@ export function DashboardNavbar() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <Typography
-              variant="h6"
+              variant="h4"
               color="blue-gray"
               className="font-normal text-sm"
             >
-              Selamat Datang, <strong>Librarian</strong>
+              Selamat Datang, <strong>{profileData.name || profileData.email || "Librarian"}</strong>
             </Typography>
           </div>
           {/* <div className="mr-auto md:mr-4 md:w-56">
@@ -108,7 +139,7 @@ export function DashboardNavbar() {
                 <Button
                   variant="text"
                   color="blue-gray"
-                  className="flex items-center gap-1 px-4 normal-case"
+                  className="flex items-center gap-1 p-2 normal-case"
                 >
                   <UserCircleIcon className="h-7 w-7 text-blue-gray-500" />
                 </Button>

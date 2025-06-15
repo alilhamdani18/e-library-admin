@@ -14,6 +14,7 @@ import {
 } from "@material-tailwind/react";
 import { userService } from "@/services/userServices";
 import { DeviceTabletIcon } from "@heroicons/react/24/solid";
+import getDateString from "@/utils/getDate";
 
 export function Users() {
   const [loading, setLoading] = useState(false);
@@ -29,12 +30,24 @@ export function Users() {
     fetchUsers();
   }, []);
 
+
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await userService.getAllUsers();
-      setUsers(data);
+      const transformedData = data.map(users => ({
+        profileImageUrl: users.profileImageUrl || "/img/default-avatar.jpeg",
+        name: users.name || "No name",
+        email: users.email || "No Email",
+        address: users.address || "Unknown Book",
+        status: users.status,
+        role: users.role,
+        phone: users.phone,
+        createdAt: getDateString(users.createdAt),
+      }));
+      setUsers(transformedData);
+
       console.log("Type of users:", typeof data, Array.isArray(data));
       console.log("Users data:", data);
     } catch (err) {
@@ -180,14 +193,6 @@ export function Users() {
                     idx === currentData.length - 1 ? "" : "border-b border-blue-gray-100"
                   }`;
 
-                  const date = new Date(createdAt).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  });
-                  console.log("createdAt:", createdAt);
-
-
                   return (
                     <tr
                       key={`${name}-${(currentPage - 1) * rowsPerPage + idx}`}
@@ -207,12 +212,12 @@ export function Users() {
                         </div>
                       </td>
                       <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                        <Typography className="text-sm text-blue-grey-800">
                           {address}
                         </Typography>
                       </td>
                       <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                        <Typography className="text-sm text-blue-grey-800">
                           {phone}
                         </Typography>
                       </td>
@@ -225,13 +230,13 @@ export function Users() {
                           />
                         </td>
                       <td className={className}>
-                        <Typography className="text-xs font-semibold text-center text-blue-gray-600">
+                        <Typography className="text-sm text-center text-blue-grey-800">
                           {role}
                         </Typography>
                       </td>
                       <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {date}
+                        <Typography className="text-sm text-blue-grey-800">
+                          {createdAt}
                         </Typography>
                       </td>
                     </tr>

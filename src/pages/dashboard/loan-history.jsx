@@ -10,6 +10,7 @@ import {
   Dialog,
 } from "@material-tailwind/react";
 import { loanServices } from "@/services/loanServices";
+import getDateString from "@/utils/getDate";
 
 
 
@@ -33,7 +34,7 @@ export function LoanHistory() {
     setError(null);
     try {
       const data = await loanServices.getAllLoans();
-      
+
       // Transform data jika struktur dari API berbeda
       const transformedData = data.map(loan => ({
         id: loan.id,
@@ -42,8 +43,8 @@ export function LoanHistory() {
         email: loan.user?.email || "No Email",
         title: loan.book?.title || "Unknown Book",
         status: loan.status,
-        borrowedDate: loan.borrowedDate || loan.createdAt,
-        returnedDate: loan.returnedDate || "-",
+        requestDate: getDateString(loan.requestDate),
+        returnDate: getDateString(loan.returnDate),
       }));
       
       setLoanHistory(transformedData);
@@ -158,8 +159,8 @@ export function LoanHistory() {
                     email = "No Email",
                     title = "Unknown Book",
                     status,
-                    borrowedDate = "-",
-                    returnedDate = "-",
+                    requestDate = "-",
+                    returnDate = "-",
                   } = loan || {};
 
                   const className = `py-3 px-5 ${
@@ -210,12 +211,12 @@ export function LoanHistory() {
                       </td>
                       <td className={className}>
                         <Typography className="text-sm">
-                          {borrowedDate}
+                          {requestDate}
                         </Typography>
                       </td>
                       <td className={className}>
                         <Typography className="text-sm">
-                          {returnedDate}
+                          {returnDate}
                         </Typography>
                       </td>
                       <td className={className}>
@@ -306,11 +307,11 @@ export function LoanHistory() {
                   />
                 </div>
                 <div>
-                  <strong>Tanggal Pinjam:</strong> {selectedBook.borrowedDate}
+                  <strong>Tanggal Pinjam:</strong> {selectedBook.requestDate}
                 </div>
                 <div>
                   <strong>Tanggal Dikembalikan:</strong>{" "}
-                  {selectedBook.returnedDate}
+                  {selectedBook.returnDate}
                 </div>
               </div>
               <div className="flex justify-end gap-2">

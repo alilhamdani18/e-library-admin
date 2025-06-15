@@ -9,7 +9,7 @@ import {
   Input,
 } from "@material-tailwind/react";
 import { librarianServices } from "@/services/librarianServices";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 export function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(null);

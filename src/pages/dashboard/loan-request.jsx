@@ -9,6 +9,8 @@ import {
 } from "@material-tailwind/react";
 import { BookOpenIcon, UserIcon } from "@heroicons/react/24/outline";
 import { loanServices } from "@/services/loanServices"; // pastikan path-nya benar
+import getDateString from "@/utils/getDate";
+
 
 export function LoanRequest() {
   const [requests, setRequests] = useState([]);
@@ -19,6 +21,7 @@ export function LoanRequest() {
     try {
       const data = await loanServices.getAllRequest();
       setRequests(data);
+      // console.log("Requests data:", data);
     } catch (error) {
       console.error("Gagal memuat data permintaan:", error);
     } finally {
@@ -96,7 +99,7 @@ export function LoanRequest() {
                 </div>
                 <Typography className="text-sm text-gray-600">
                   Tanggal Permintaan:{" "}
-                  {new Date(req.createdAt).toLocaleDateString()}
+                  {getDateString(req.requestDate)}
                 </Typography>
               </CardBody>
               <CardFooter className="flex gap-2 px-6 pb-4">
