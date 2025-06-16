@@ -1,5 +1,4 @@
 import api from '../configs/api';
-import { getAuth } from "firebase/auth";
 
 export const librarianServices = {
   getDashboardStats: async () => {

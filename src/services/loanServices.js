@@ -43,10 +43,10 @@ export const loanServices = {
     }
   },
 
-  rejectLoan: async (loanId, librarianId) => {
+  rejectLoan: async (loanId, librarianId, reason) => {
     try {
       const response = await api.put(`/api/loans/${loanId}/reject`, {
-        librarianId,
+        librarianId, reason
       });
       return response.data;
     } catch (error) {

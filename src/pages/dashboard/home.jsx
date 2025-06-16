@@ -7,6 +7,7 @@ import {
   Avatar,
   Tooltip,
   Progress,
+  Button
 } from "@material-tailwind/react";
 import { BookOpenIcon, UserGroupIcon, ClockIcon } from "@heroicons/react/24/solid";
 
@@ -43,9 +44,9 @@ export function Home() {
         const response = await loanServices.getAllLoans();
         const filteredLoans = response.filter(loan => loan.status == 'approved');
 
-        console.log(response);
+        console.log(filteredLoans);
         
-        setActiveLoans(response); 
+        setActiveLoans(filteredLoans); 
       } catch (error) {
         console.error("Gagal mengambil data Active Loans:", error);
       } finally {
@@ -120,7 +121,7 @@ export function Home() {
         )}
       </div>
 
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <Card className="overflow-hidden xl:col-span-2 border border-blue-gray-100 shadow-sm">
           <CardHeader
             floated={false}
@@ -145,7 +146,7 @@ export function Home() {
             <table className="w-full min-w-[640px] table-auto">
               <thead>
                 <tr>
-                  {["book title", "users", "tgl pinjam", "tgl dikembalikan"].map(
+                  {["book title", "users", "tgl pinjam", "tgl dikembalikan", "action"].map(
                     (el) => (
                       <th
                         key={el}
@@ -232,6 +233,21 @@ export function Home() {
                             />
                           </div>
                         </td>
+                        <td className={className}>
+                          <Button
+                            size="sm"
+                            color="blue"
+                            variant="gradient"
+                            onClick={() =>
+                              handleOpenModal(
+                                loan,
+                                (currentPage - 1) * rowsPerPage + index
+                              )
+                            }
+                          >
+                            Detail
+                          </Button>
+                        </td>
                       </tr>
                     );
                   }
@@ -240,7 +256,7 @@ export function Home() {
             </table>
           </CardBody>
         </Card>
-      </div>
+      </div> */}
     </div>
   );
 }

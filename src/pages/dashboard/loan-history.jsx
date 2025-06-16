@@ -12,6 +12,11 @@ import {
 import { loanServices } from "@/services/loanServices";
 import getDateString from "@/utils/getDate";
 import { getAuth } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../configs/firebase";
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 
 
@@ -19,12 +24,49 @@ export function LoanHistory() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loanHistory, setLoanHistory] = useState([]);
+  const [rawLoanHistory, setRawLoanHistory] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
   const totalPages = Math.ceil(loanHistory.length / rowsPerPage);
   const [selectedBook, setSelectedBook] = useState(null);
   const [openModal, setOpenModal] = useState(false);
+
+  const MySwal = withReactContent(Swal);
+  
+
+  const transformLoanData = (data) => {
+    return data.map((loan) => {
+      const approvedSeconds = loan.approvedDate?._seconds;
+      const returnSeconds = loan.returnDate?._seconds;
+
+      let finalReturnDate;
+
+      if (returnSeconds) {
+        finalReturnDate = new Date(returnSeconds * 1000);
+      } else if (approvedSeconds && loan.loanDuration) {
+        // Hitung returnDate sementara dari approvedDate + loanDuration
+        finalReturnDate = new Date(approvedSeconds * 1000);
+        finalReturnDate.setDate(finalReturnDate.getDate() + loan.loanDuration);
+      }
+
+      return {
+        id: loan.id,
+        cover: loan.book?.coverUrl || "/img/default-cover.jpeg",
+        img: loan.user?.profileImageUrl || "/img/default-avatar.jpeg",
+        user: loan.user?.name || "Unknown User",
+        email: loan.user?.email || "No Email",
+        title: loan.book?.title || "Unknown Book",
+        status: loan.status,
+        loanDuration: loan.loanDuration,
+        approvedDate: getDateString(loan.approvedDate),
+        returnDate: finalReturnDate
+          ? getDateString({ _seconds: finalReturnDate.getTime() / 1000 })
+          : "-",
+      };
+    });
+  };
+
 
   useEffect(() => {
     fetchLoanHistory();
@@ -35,23 +77,10 @@ export function LoanHistory() {
     setError(null);
     try {
       const data = await loanServices.getAllLoans();
+      setRawLoanHistory(data); 
+      setLoanHistory(transformLoanData(data));
 
-      // Transform data jika struktur dari API berbeda
-      const transformedData = data.map(loan => ({
-        id: loan.id,
-        img: loan.user?.profileImageUrl || "/img/default-avatar.jpeg",
-        user: loan.user?.name || "Unknown User",
-        email: loan.user?.email || "No Email",
-        title: loan.book?.title || "Unknown Book",
-        status: loan.status,
-        approvedDate: getDateString(loan.approvedDate),
-        returnDate: getDateString(loan.returnDate),
-      }));
-      
-      setLoanHistory(transformedData);
-      console.log("Type of loans:", typeof data, Array.isArray(data));
-      console.log("Loans data:", data);
-      console.log("Transformed loans:", transformedData);
+     
     } catch (err) {
       setError("Gagal memuat data Loans");
       console.error("Error fetching loans:", err);
@@ -64,7 +93,7 @@ export function LoanHistory() {
     }
   };
 
-  const handleReturn = async (id) => {
+  const handleReturn = async (loan) => {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
@@ -73,11 +102,25 @@ export function LoanHistory() {
 
       const uid = user.uid;
       console.log("UID:", uid);
-      console.log(id);
+
+      const returnDate = new Date();
+
+      console.log("Approved Date:", loan.approvedDate);
+      console.log("Return Date (sekarang):", returnDate);
+
+      const loanRef = doc(db, "loans", loan.id);
+      await updateDoc(loanRef, {
+        returnDate: returnDate,
+        returnedBy: uid,
+      });
       
 
       // Kirim ke backend untuk memproses pengembalian
-      await loanServices.returnLoan(id, uid);
+      await loanServices.returnLoan(loan.id, uid);
+      handleCloseModal();
+      
+      fetchLoanHistory();
+      return true;
 
     } catch (error) {
       console.error("Gagal mengembalikan buku:", error);
@@ -113,6 +156,42 @@ export function LoanHistory() {
     setOpenModal(false);
   };
 
+  const confirmReturn = (id) => {
+    MySwal.fire({
+      title: 'Konfirmasi Pengembalian',
+      text: 'Apakah Anda yakin ingin menerima pengembalian buku ini?',
+      customClass: {
+        confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded mr-2',
+        cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded',
+      },
+      buttonsStyling: false,
+      showCancelButton: true,
+      confirmButtonText: 'Terima',
+      cancelButtonText: 'Batal',
+      
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const success = await handleReturn(id);
+        if (success) {
+          await MySwal.fire({
+            icon: 'success',
+            title: 'Pengembalian Diterima!',
+            text: 'Pengembalian berhasil diproses.',
+            customClass: {
+              confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded mr-2',
+            },
+          });
+        } else {
+          await MySwal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Terjadi kesalahan saat memproses Pengembalian.',
+          });
+        }
+      }
+    });
+  };
+
 
 
   return (
@@ -139,8 +218,8 @@ export function LoanHistory() {
               <thead>
                 <tr>
                   {[
-                    "Pengguna",
                     "Judul Buku",
+                    "Pengguna",
                     "Status",
                     "Tgl Pinjam",
                     "Tgl Dikembalikan",
@@ -165,7 +244,8 @@ export function LoanHistory() {
                   // ✅ Destructuring dengan safety check
                   const {
                     id,
-                    img = "/img/default-avatar.jpeg",
+                    cover = "/img/default-avatar.jpeg",
+                    author = "Unknown User",
                     user = "Unknown User",
                     email = "No Email",
                     title = "Unknown Book",
@@ -188,7 +268,7 @@ export function LoanHistory() {
                       <td className={className}>
                         <div className="flex items-center gap-4">
                           <Avatar
-                            src={img}
+                            src={cover}
                             alt={user}
                             size="sm"
                             variant="rounded"
@@ -199,23 +279,32 @@ export function LoanHistory() {
                               color="blue-gray"
                               className="font-semibold"
                             >
-                              {user}
+                              {title}
                             </Typography>
                             <Typography className="text-xs text-blue-gray-400">
-                              {email}
+                              {author}
                             </Typography>
                           </div>
                         </div>
                       </td>
                       <td className={className}>
-                        <Typography className="text-sm text-blue-gray-700">
-                          {title}
-                        </Typography>
+                        <div>
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-semibold"
+                          >
+                            {user}
+                          </Typography>
+                          <Typography className="text-xs text-blue-gray-400">
+                            {email}
+                          </Typography>
+                        </div>
                       </td>
                       <td className={className}>
                         <Chip
                           variant="gradient"
-                          color={status == "approved" ? "green" : "blue"}
+                          color={status == "approved" ? "green" : "orange"}
                           value={status == "approved" ? "Dipinjam" : "Dikembalikan"}
                           className="py-0.5 px-3 text-xs font-medium w-fit"
                         />
@@ -290,11 +379,49 @@ export function LoanHistory() {
           {selectedBook && (
             <>
               <div className="flex items-center gap-4 mb-4">
+                <img 
+                  src={selectedBook.cover} 
+                  alt="selectedBook.title" 
+                  className="h-24 rounded-md shadow-lg shadow-blue-gray-500/25"/>
+                
+                <div>
+                  <Typography className="font-bold text-blue-gray-800">
+                    {selectedBook.title}
+                  </Typography>
+                  <Typography className="text-sm text-blue-gray-500">
+                    {selectedBook.author}
+                  </Typography>
+                </div>
+              </div>
+              <div className="text-sm text-blue-gray-700 space-y-2 mb-6">
+                <div>
+                  <strong>Status:</strong>{" "}
+                  <Chip
+                    variant="gradient"
+                    color={selectedBook.status == "approved" ? "green" : "orange"}
+                    value={selectedBook.status == "approved" ? "Dipinjam" : "Dikembalikan"}
+                    className="py-0.5 px-3 text-xs font-medium w-fit inline-block"
+                  />
+                </div>
+                <div>
+                  <strong>Tanggal Pinjam:</strong> 
+                  {selectedBook.approvedDate}
+                </div>
+                <div>
+                  <strong>Tanggal Dikembalikan:</strong>{" "}
+                  {selectedBook.returnDate}
+                </div>
+                <div>
+                  <strong>Durasi Peminjaman:</strong>{" "}
+                  {selectedBook.loanDuration} hari
+                </div>
+              </div>
+              <div className="flex items-center gap-4 mt-2 mb-4">
                 <Avatar
-                  src={selectedBook.img}
-                  alt={selectedBook.user}
-                  size="lg"
-                />
+                    src={selectedBook.img}
+                    alt={selectedBook.user}
+                    size="sm"
+                  />
                 <div>
                   <Typography className="font-bold text-blue-gray-800">
                     {selectedBook.user}
@@ -303,31 +430,16 @@ export function LoanHistory() {
                     {selectedBook.email}
                   </Typography>
                 </div>
-              </div>
-              <div className="text-sm text-blue-gray-700 space-y-2 mb-6">
-                <div>
-                  <strong>Buku:</strong> {selectedBook.title}
-                </div>
-                <div>
-                  <strong>Status:</strong>{" "}
-                  <Chip
-                    variant="gradient"
-                    color={selectedBook.status == "approved" ? "green" : "blue"}
-                    value={selectedBook.status == "approved" ? "Dipinjam" : "Dikembalikan"}
-                    className="py-0.5 px-3 text-xs font-medium w-fit inline-block"
-                  />
-                </div>
-                <div>
-                  <strong>Tanggal Pinjam:</strong> {selectedBook.approvedDate}
-                </div>
-                <div>
-                  <strong>Tanggal Dikembalikan:</strong>{" "}
-                  {selectedBook.returnDate}
-                </div>
+                
               </div>
               <div className="flex justify-end gap-2">
                 {selectedBook.status == "approved" && (
-                  <Button color="orange" onClick={() => handleReturn(selectedBook.id)}>
+                  <Button color="orange" onClick={() => {
+                    document.activeElement?.blur();
+                    handleCloseModal();       
+                    setTimeout(() => confirmReturn(selectedBook), 300);
+                  }}
+                  >
                     Tandai Dikembalikan
                   </Button>
                 )}

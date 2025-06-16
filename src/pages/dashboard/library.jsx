@@ -17,7 +17,6 @@ import {
 } from "@material-tailwind/react";
 import { MagnifyingGlassIcon, HeartIcon, DocumentArrowUpIcon } from "@heroicons/react/24/solid";
 import { bookService } from "../../services/bookServices"; // Import service yang sudah dibuat
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export function Library() {
   // State untuk data buku dari API
@@ -49,7 +48,7 @@ export function Library() {
   const [selectedBook, setSelectedBook] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const itemsPerPage = 12;
 
   // Fetch data buku saat component mount
   useEffect(() => {
@@ -365,7 +364,7 @@ export function Library() {
                         Stok Tersedia: {book.availableStock || 0}
                       </Typography>
                       <Typography variant="small" className="text-yellow-800 font-semibold mb-1">
-                        Rating: {book.rating || "0"} / 5
+                        Rating: {book.rating || "Belum ada rating"}
                       </Typography>
                       <Typography
                         variant="small"
