@@ -30,7 +30,7 @@ export function SignIn() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(db, "librarians", user.uid);
       const userSnap = await getDoc(userRef);
       console.log(email, password)
 

@@ -46,7 +46,7 @@ export function DashboardNavbar() {
     const user = auth.currentUser;
 
     if (user) {
-      const userDocRef = doc(db, "users", user.uid); // diasumsikan kamu menyimpan profil di koleksi "users"
+      const userDocRef = doc(db, "librarians", user.uid); // diasumsikan kamu menyimpan profil di koleksi "users"
       const userSnap = await getDoc(userDocRef);
 
       if (userSnap.exists()) {

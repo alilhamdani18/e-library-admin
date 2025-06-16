@@ -43,6 +43,7 @@ export const bookService = {
         formData.append("cover", bookData.file); // <== pastikan 'cover' sesuai dengan multer
       }
 
+
       const response = await api.post('/api/books', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',

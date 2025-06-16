@@ -10,6 +10,8 @@ import {
 import { BookOpenIcon, UserIcon } from "@heroicons/react/24/outline";
 import { loanServices } from "@/services/loanServices"; // pastikan path-nya benar
 import getDateString from "@/utils/getDate";
+import { getAuth } from "firebase/auth";
+
 
 
 export function LoanRequest() {
@@ -19,6 +21,7 @@ export function LoanRequest() {
 
   const fetchRequests = async () => {
     try {
+      
       const data = await loanServices.getAllRequest();
       setRequests(data);
       // console.log("Requests data:", data);
@@ -36,8 +39,19 @@ export function LoanRequest() {
   const handleTerima = async (id) => {
     setButtonLoadingId(id);
     try {
-      await loanServices.approveLoan(id);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) throw new Error("User belum login");
+
+      const uid = user.uid; 
+      console.log(uid);
+      
+      await loanServices.approveLoan(id, uid);
+      setRequests((prev) => {
+        prev.filter((r) => r.id !== id);
+      });
+      
       console.log(`Request ${id} diterima`);
     } catch (error) {
       console.error("Gagal menerima permintaan:", error);
@@ -49,9 +63,18 @@ export function LoanRequest() {
   const handleTolak = async (id) => {
     setButtonLoadingId(id);
     try {
-      await loanServices.rejectLoan(id);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
-      console.log(`Request ${id} ditolak`);
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) throw new Error("User belum login");
+
+      const uid = user.uid; 
+      console.log(uid);
+      await loanServices.rejectLoan(id, uid);
+      setRequests((prev) => {
+        prev.filter((r) => r.id !== id)
+        console.log(`Request ${id} ditolak`);
+      });
     } catch (error) {
       console.error("Gagal menolak permintaan:", error);
     } finally {
@@ -67,7 +90,7 @@ export function LoanRequest() {
 
       {loading ? (
         <Typography color="gray">Memuat data...</Typography>
-      ) : requests.length === 0 ? (
+      ) : requests?.length === 0 ? (
         <Typography color="gray">
           Tidak ada permintaan peminjaman saat ini.
         </Typography>

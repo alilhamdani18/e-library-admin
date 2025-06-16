@@ -13,10 +13,12 @@ import { BookOpenIcon, UserGroupIcon, ClockIcon } from "@heroicons/react/24/soli
 import { StatisticsCard } from "@/widgets/cards";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { librarianServices } from "@/services/librarianServices";
+import { loanServices } from "@/services/loanServices";
 import { projectsTableData } from "@/data";
 
 export function Home() {
   const [stats, setStats] = useState(null);
+  const [activeLoans, setActiveLoans] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +36,24 @@ export function Home() {
 
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    const fetchActiveLoans = async () => {
+      try {
+        const response = await loanServices.getAllLoans();
+        const filteredLoans = response.filter(loan => loan.status == 'approved');
+
+        console.log(response);
+        
+        setActiveLoans(response); 
+      } catch (error) {
+        console.error("Gagal mengambil data Active Loans:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchActiveLoans();
+  }, [])
 
   const cardData = [
     {
@@ -110,14 +130,14 @@ export function Home() {
           >
             <div>
               <Typography variant="h6" color="blue-gray" className="mb-1">
-                Book Circulation
+                Active Loans
               </Typography>
               <Typography
                 variant="small"
                 className="flex items-center gap-1 font-normal text-blue-gray-600"
               >
-                <CheckCircleIcon strokeWidth={3} className="h-4 w-4 text-blue-gray-200" />
-                <strong>30 done</strong> this month
+                <CheckCircleIcon strokeWidth={3} className="h-4 w-4 text-green-500" />
+                <strong>{stats?.activeLoans} active</strong> this month
               </Typography>
             </div>
           </CardHeader>

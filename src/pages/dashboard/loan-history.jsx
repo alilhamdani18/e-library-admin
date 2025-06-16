@@ -11,6 +11,7 @@ import {
 } from "@material-tailwind/react";
 import { loanServices } from "@/services/loanServices";
 import getDateString from "@/utils/getDate";
+import { getAuth } from "firebase/auth";
 
 
 
@@ -43,7 +44,7 @@ export function LoanHistory() {
         email: loan.user?.email || "No Email",
         title: loan.book?.title || "Unknown Book",
         status: loan.status,
-        requestDate: getDateString(loan.requestDate),
+        approvedDate: getDateString(loan.approvedDate),
         returnDate: getDateString(loan.returnDate),
       }));
       
@@ -57,11 +58,32 @@ export function LoanHistory() {
       
       // Fallback ke dummy data untuk testing
       console.log("Using dummy data as fallback");
-      setLoanHistory(dummyData);
+      setLoanHistory();
     } finally {
       setLoading(false);
     }
   };
+
+  const handleReturn = async (id) => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) throw new Error("User belum login");
+
+      const uid = user.uid;
+      console.log("UID:", uid);
+      console.log(id);
+      
+
+      // Kirim ke backend untuk memproses pengembalian
+      await loanServices.returnLoan(id, uid);
+
+    } catch (error) {
+      console.error("Gagal mengembalikan buku:", error);
+    }
+  };
+
   
 
   useEffect(() => {
@@ -91,18 +113,7 @@ export function LoanHistory() {
     setOpenModal(false);
   };
 
-  const handleReturn = () => {
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString("id-ID");
 
-    const updatedData = [...loanHistory];
-    const bookIndex = selectedBook.index;
-    updatedData[bookIndex].returnedDate = formattedDate;
-    updatedData[bookIndex].status = false;
-
-    setLoanHistory(updatedData); // ✅ Fixed: menggunakan setLoanHistory
-    handleCloseModal();
-  };
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-6">
@@ -159,7 +170,7 @@ export function LoanHistory() {
                     email = "No Email",
                     title = "Unknown Book",
                     status,
-                    requestDate = "-",
+                    approvedDate = "-",
                     returnDate = "-",
                   } = loan || {};
 
@@ -211,7 +222,7 @@ export function LoanHistory() {
                       </td>
                       <td className={className}>
                         <Typography className="text-sm">
-                          {requestDate}
+                          {approvedDate}
                         </Typography>
                       </td>
                       <td className={className}>
@@ -271,7 +282,7 @@ export function LoanHistory() {
       </Card>
 
       {/* Modal Detail */}
-      <Dialog open={openModal} handler={handleCloseModal}>
+      <Dialog open={openModal} handler={handleCloseModal} size="xs">
         <Card className="p-6">
           <Typography variant="h5" className="mb-4 font-bold">
             Detail Peminjaman
@@ -301,13 +312,13 @@ export function LoanHistory() {
                   <strong>Status:</strong>{" "}
                   <Chip
                     variant="gradient"
-                    color={selectedBook.status ? "green" : "blue"}
-                    value={selectedBook.status ? "Dipinjam" : "Dikembalikan"}
+                    color={selectedBook.status == "approved" ? "green" : "blue"}
+                    value={selectedBook.status == "approved" ? "Dipinjam" : "Dikembalikan"}
                     className="py-0.5 px-3 text-xs font-medium w-fit inline-block"
                   />
                 </div>
                 <div>
-                  <strong>Tanggal Pinjam:</strong> {selectedBook.requestDate}
+                  <strong>Tanggal Pinjam:</strong> {selectedBook.approvedDate}
                 </div>
                 <div>
                   <strong>Tanggal Dikembalikan:</strong>{" "}
@@ -315,8 +326,8 @@ export function LoanHistory() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                {selectedBook.status && (
-                  <Button color="orange" onClick={handleReturn}>
+                {selectedBook.status == "approved" && (
+                  <Button color="orange" onClick={() => handleReturn(selectedBook.id)}>
                     Tandai Dikembalikan
                   </Button>
                 )}

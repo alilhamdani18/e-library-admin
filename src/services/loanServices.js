@@ -7,7 +7,7 @@ export const loanServices = {
       const allLoans = response.data.data;
 
       // Filter loans yang bukan 'pending'
-      const filteredLoans = allLoans.filter(loan => loan.status !== 'pending');
+      const filteredLoans = allLoans.filter(loan => loan.status !== 'pending' && loan.status !== 'rejected');
 
       return filteredLoans;
     } catch (error) {
@@ -31,27 +31,34 @@ export const loanServices = {
   },
 
 
-  approveLoan: async (loanId) => {
+  approveLoan: async (loanId, librarianId) => {
     try {
-      const response = await api.put(`/api/loans/${loanId}/approve`);
+      const response = await api.put(`/api/loans/${loanId}/approve`, {
+        librarianId,
+      });
       return response.data;
     } catch (error) {
       console.error(`Error approving loan with id ${loanId}:`, error);
       throw error;
     }
   },
-  rejectLoan: async (loanId) => {
+
+  rejectLoan: async (loanId, librarianId) => {
     try {
-      const response = await api.put(`/api/loans/${loanId}/reject`);
+      const response = await api.put(`/api/loans/${loanId}/reject`, {
+        librarianId,
+      });
       return response.data;
     } catch (error) {
       console.error(`Error rejecting loan with id ${loanId}:`, error);
       throw error;
     }
   },
-  returnLoan: async (loanId) => {
+  returnLoan: async (loanId, librarianId) => {
     try {
-      const response = await api.put(`/api/loans/${loanId}/return`);
+      const response = await api.put(`/api/loans/${loanId}/return`, {
+        librarianId
+      });
       return response.data;
     } catch (error) {
       console.error(`Error returning book with id ${loanId}:`, error);

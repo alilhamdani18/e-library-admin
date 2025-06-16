@@ -17,6 +17,7 @@ import {
 } from "@material-tailwind/react";
 import { MagnifyingGlassIcon, HeartIcon, DocumentArrowUpIcon } from "@heroicons/react/24/solid";
 import { bookService } from "../../services/bookServices"; // Import service yang sudah dibuat
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export function Library() {
   // State untuk data buku dari API
@@ -39,9 +40,9 @@ export function Library() {
     year: "",
     category: "",
     description: "",
-    file: null,
+    cover: null,
     pages: "",
-    stock: "", // Tambah ISBN sesuai API
+    stock: "", 
   });
 
   // Data buku yang sedang diedit / dihapus
@@ -84,7 +85,7 @@ export function Library() {
     const file = e.target.files[0];
     console.log('Selected file:', file);
     if (file) {
-      setFormData({ ...formData, file });
+      setFormData({ ...formData, cover:file });
     }
   };
 
@@ -102,7 +103,7 @@ export function Library() {
         category: formData.category,
         year: parseInt(formData.year),
         pages: parseInt(formData.pages),
-        file: formData.cover, // ⬅️ file dikirim di field 'file', bukan 'cover'
+        file: formData.cover, 
       };
 
       await bookService.createBook(bookData);
@@ -138,57 +139,58 @@ export function Library() {
       setFormData({
         title: book.title || "",
         author: book.author || "",
-        year: book.publicationYear?.toString() || "",
+        year: book.year?.toString() || "",
         category: book.category || "",
         description: book.description || "",
-        file: null,
+        cover: null, // clear file input
+        previewUrl: book.coverUrl || null, // for preview
         pages: book.pages?.toString() || "",
-        stock: book.stock || "",
+        stock: book.availableStock?.toString() || "",
       });
       setSelectedBook(book);
       setOpenEditModal(true);
     }
   };
 
+
   // Fungsi simpan perubahan edit buku - menggunakan API
   const handleSaveEdit = async () => {
     if (!selectedBook) return;
-    
+
     try {
       setLoading(true);
-      
-      // Siapkan data untuk update
+
       const bookData = {
         title: formData.title,
         author: formData.author,
-        stock: formData.stock,
+        year: parseInt(formData.year),
         description: formData.description,
         category: formData.category,
-        publicationYear: parseInt(formData.year),
-        pages: parseInt(formData.pages) || undefined,
+        stock: formData.stock,
+        pages: parseInt(formData.pages),
+        file: formData.cover, // jika file baru diunggah
       };
 
-      await bookService.updateBook(selectedBook.id, bookData);
-      
-      // Reset form
+      await bookService.updateBook(selectedBook.id, bookData); // Pastikan ini POST multipart/form-data
+
       setFormData({
         title: "",
         author: "",
         year: "",
         category: "",
         description: "",
-        file: null,
+        cover: null,
+        previewUrl: null,
         pages: "",
         stock: "",
       });
-      
+
       setOpenEditModal(false);
       setSelectedBook(null);
       await fetchBooks(); // Refresh data
       alert("Perubahan buku berhasil disimpan!");
-      
     } catch (error) {
-      console.error('Error updating book:', error);
+      console.error("Error updating book:", error);
       alert("Gagal menyimpan perubahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
@@ -338,7 +340,7 @@ export function Library() {
                     className="h-56 flex-shrink-0"
                   >
                     <img
-                      src={book.coverUrl || "/img/default-book.jpg"}
+                      src={book.coverUrl || "/img/default-book.jpeg"}
                       alt={book.title}
                       className="w-36 h-full sm:w-full object-cover"
                     />
@@ -347,13 +349,13 @@ export function Library() {
                   {/* Card Body + Footer */}
                   <div className="mt-2 flex flex-col justify-between flex-1">
                     <CardBody className="py-1 px-4 flex-1">
-                      <Typography variant="h6" color="blue-gray" className="">
+                      <Typography variant="h6" color="green" className="">
                         {book.title}
                       </Typography>
-                      <Typography variant="small" className="text-green-500 mb-2">
+                      <Typography variant="small" className="blue-grey mb-3 italic">
                         {book.author} &middot; {book.publicationYear || book.year}
                       </Typography>
-                      <Typography variant="" className="text-gray-600 text-sm mb-2 line-clamp-3">
+                      <Typography className="text-gray-600 text-sm mb-2 line-clamp-3">
                         {book.description}
                       </Typography>
                       <Typography variant="small" className="text-gray-600 font-bold">
@@ -451,7 +453,7 @@ export function Library() {
             >
               <img src="/img/upload-icon.png" alt="Upload Icon" className="w-12 h-12 mb-2 opacity-80" />
               <p className="text-blue-600 font-medium">
-                {formData.file ? formData.file.name : "Drag & Drop atau Klik untuk Upload Cover"}
+                {formData.cover ? formData.cover.name : "Drag & Drop atau Klik untuk Upload Cover"}
               </p>
               <p className="text-sm text-gray-500 mt-1">Supports: JPG, JPEG, PNG</p>
               <input
@@ -466,39 +468,31 @@ export function Library() {
             {/* Form Input */}
             <div className="col-span-1 md:col-span-2 flex flex-col gap-4">
               <Input 
-                label="Judul *" 
+                label="Judul" 
                 name="title" 
-                value={formData.title}
                 onChange={handleInputChange} 
-                required
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input 
-                  label="Penulis *" 
+                  label="Penulis" 
                   name="author" 
-                  value={formData.author}
                   onChange={handleInputChange} 
-                  required
                 />
                 <Input 
                   label="Tahun Terbit" 
                   name="year" 
-                  value={formData.year}
                   onChange={handleInputChange} 
-                  type="number"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input 
                   label="Kategori" 
                   name="category" 
-                  value={formData.category}
                   onChange={handleInputChange} 
                 />
                 <Input 
                   label="Jumlah Halaman" 
                   name="pages" 
-                  value={formData.pages}
                   onChange={handleInputChange} 
                   type="number"
                 />
@@ -506,13 +500,12 @@ export function Library() {
               <Input 
                 label="Stock" 
                 name="stock" 
-                value={formData.stock}
+                type="number"
                 onChange={handleInputChange} 
               />
               <Textarea 
                 label="Deskripsi" 
                 name="description" 
-                value={formData.description}
                 onChange={handleInputChange} 
               />
             </div>
@@ -542,14 +535,14 @@ export function Library() {
       <Dialog open={openEditModal} handler={() => setOpenEditModal(!openEditModal)} size="md">
         <DialogHeader className="justify-center">Edit Buku</DialogHeader>
         <DialogBody divider className="max-h-[80vh] overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div
               className="flex flex-col items-center justify-center border-2 border-dashed border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors rounded-xl p-6 text-center cursor-pointer h-full"
               onClick={() => document.getElementById("file-upload-edit").click()}
             >
               <img src="/img/upload-icon.png" alt="Upload Icon" className="w-12 h-12 mb-2 opacity-80" />
               <p className="text-blue-600 font-medium">
-                {formData.file ? formData.file.name : "Drag & Drop atau Klik untuk Upload Cover"}
+                {formData.cover ? formData.cover.name : "Drag & Drop atau Klik untuk Upload Cover"}
               </p>
               <p className="text-sm text-gray-500 mt-1">Supports: JPG, JPEG, PNG</p>
               <input
@@ -557,33 +550,29 @@ export function Library() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                value={formData.file}
                 onChange={handleFileChange}
               />
             </div>
 
-            <div className="col-span-1 md:col-span-2 flex flex-col gap-4">
+            <div className="col-span-1 sm:col-span-2 flex flex-col gap-4">
               <Input 
                 label="Judul" 
                 name="title" 
                 value={formData.title} 
                 onChange={handleInputChange} 
-                required
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input 
-                  label="Penulis *" 
+                  label="Penulis" 
                   name="author" 
                   value={formData.author} 
                   onChange={handleInputChange} 
-                  required
                 />
                 <Input 
                   label="Tahun Terbit" 
                   name="year" 
                   value={formData.year} 
                   onChange={handleInputChange} 
-                  type="number"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -602,9 +591,10 @@ export function Library() {
                 />
               </div>
               <Input 
-                label="ISBN" 
-                name="isbn" 
-                value={formData.isbn} 
+                label="Stock" 
+                name="stock" 
+                type="number"
+                value={formData.availableStock} 
                 onChange={handleInputChange} 
               />
               <Textarea 
