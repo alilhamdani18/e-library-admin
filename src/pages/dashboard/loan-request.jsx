@@ -11,9 +11,7 @@ import { BookOpenIcon, UserIcon } from "@heroicons/react/24/outline";
 import { loanServices } from "@/services/loanServices"; // pastikan path-nya benar
 import getDateString from "@/utils/getDate";
 import { getAuth } from "firebase/auth";
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-import 'sweetalert2/dist/sweetalert2.min.css';
+import Alert from "../../components/Alert";
 
 
 
@@ -22,7 +20,6 @@ export function LoanRequest() {
   const [loading, setLoading] = useState(true);
   const [buttonLoadingId, setButtonLoadingId] = useState(null);
 
-  const MySwal = withReactContent(Swal);
 
   const fetchRequests = async () => {
     try {
@@ -87,79 +84,37 @@ export function LoanRequest() {
   };
 
 
-  const confirmTerima = (id) => {
-    MySwal.fire({
-      title: 'Terima Permintaan',
-      text: 'Apakah Anda yakin ingin menerima permintaan ini?',
-      customClass: {
-        confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded mr-2',
-        cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded',
-      },
-      buttonsStyling: false,
-      showCancelButton: true,
-      confirmButtonText: 'Terima',
-      cancelButtonText: 'Batal',
-      
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const success = await handleTerima(id);
-        if (success) {
-          await MySwal.fire({
-            icon: 'success',
-            title: 'Permintaan Diterima!',
-            text: 'Permintaan berhasil diproses.',
-          });
-        } else {
-          await MySwal.fire({
-            icon: 'error',
-            title: 'Gagal!',
-            text: 'Terjadi kesalahan saat memproses permintaan.',
-          });
-        }
+  const confirmTerima = async (id) => {
+    const result = await Alert.confirm(
+      'Terima Permintaan',
+      'Apakah Anda yakin ingin menerima permintaan ini?',
+      'Terima',
+      'Batal'
+    )
+    if(result.isConfirmed) {
+      const success = await handleTerima(id);
+      if(success) {
+        Alert.success('Permintaan Diterima!', 'Permintaan berhasil diproses.');
+      } else {
+        Alert.error('Gagal!', 'Terjadi kesalahan saat memproses permintaan.');
       }
-    });
+    }
   };
-  const confirmReject = (id) => {
-    MySwal.fire({
-      title: 'Tolak Permintaan',
-      input: 'textarea',
-      inputLabel: 'Alasan Penolakan',
-      inputPlaceholder: 'Tulis alasan penolakan...',
-      inputAttributes: {
-        'aria-label': 'Alasan penolakan',
-      },
-      customClass: {
-        confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded mr-2',
-        cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded',
-      },
-      buttonsStyling: false,
-      showCancelButton: true,
-      confirmButtonText: 'Tolak',
-      cancelButtonText: 'Batal',
-      inputValidator: (value) => {
-        if (!value) {
-          return 'Alasan harus diisi!';
-        }
-      },
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const reason = result.value;
-        const success = await handleTolak(id, reason);
-        if (success) {
-          await MySwal.fire({
-            icon: 'success',
-            title: 'Permintaan ditolak!',
-            text: 'Penolakan berhasil diproses.',
-          });
-        } else {
-          await MySwal.fire({
-            icon: 'error',
-            title: 'Gagal!',
-            text: 'Terjadi kesalahan saat memproses penolakan.',
-          });
-        }
+  const confirmReject = async (id) => {
+    const result = await Alert.confirmWithTextarea(
+      'Tolak Permintaan',
+      'Apakah Anda yakin ingin menolak permintaan ini?',
+      'Tolak',
+      'Batal'
+    )
+    if(result.isConfirmed) {
+      const success = await handleTolak(id);
+      if(success) {
+        Alert.success('Permintaan Ditolak!', 'Permintaan berhasil diproses.');
+      } else {
+        Alert.error('Gagal!', 'Terjadi kesalahan saat memproses permintaan.');
       }
-    });
+    }
   };
 
 

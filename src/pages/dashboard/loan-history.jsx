@@ -14,9 +14,8 @@ import getDateString from "@/utils/getDate";
 import { getAuth } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../configs/firebase";
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-import 'sweetalert2/dist/sweetalert2.min.css';
+import Alert from "../../components/Alert";
+
 
 
 
@@ -32,8 +31,6 @@ export function LoanHistory() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [openModal, setOpenModal] = useState(false);
 
-  const MySwal = withReactContent(Swal);
-  
 
   const transformLoanData = (data) => {
     return data.map((loan) => {
@@ -54,6 +51,7 @@ export function LoanHistory() {
         id: loan.id,
         cover: loan.book?.coverUrl || "/img/default-cover.jpeg",
         img: loan.user?.profileImageUrl || "/img/default-avatar.jpeg",
+        author: loan.book?.author || "Unknown User",
         user: loan.user?.name || "Unknown User",
         email: loan.user?.email || "No Email",
         title: loan.book?.title || "Unknown Book",
@@ -156,40 +154,22 @@ export function LoanHistory() {
     setOpenModal(false);
   };
 
-  const confirmReturn = (id) => {
-    MySwal.fire({
-      title: 'Konfirmasi Pengembalian',
-      text: 'Apakah Anda yakin ingin menerima pengembalian buku ini?',
-      customClass: {
-        confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded mr-2',
-        cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded',
-      },
-      buttonsStyling: false,
-      showCancelButton: true,
-      confirmButtonText: 'Terima',
-      cancelButtonText: 'Batal',
-      
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const success = await handleReturn(id);
-        if (success) {
-          await MySwal.fire({
-            icon: 'success',
-            title: 'Pengembalian Diterima!',
-            text: 'Pengembalian berhasil diproses.',
-            customClass: {
-              confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded mr-2',
-            },
-          });
-        } else {
-          await MySwal.fire({
-            icon: 'error',
-            title: 'Gagal!',
-            text: 'Terjadi kesalahan saat memproses Pengembalian.',
-          });
-        }
-      }
-    });
+  const confirmReturn = async (id) => {
+    const result = await Alert.confirm(
+    'Konfirmasi Pengembalian',
+    'Apakah Anda yakin ingin menerima pengembalian buku ini?',
+    'Terima',
+    'Batal'
+  );
+
+  if (result.isConfirmed) {
+    const success = await handleReturn(id);
+    if (success) {
+      await Alert.success('Pengembalian Diterima!', 'Pengembalian berhasil diproses.');
+    } else {
+      await Alert.error('Gagal!', 'Terjadi kesalahan saat memproses Pengembalian.');
+    }
+  }
   };
 
 

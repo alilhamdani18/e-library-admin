@@ -12,6 +12,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../configs/firebase"; // sesuaikan path-nya
 import logo from "/img/e-library-icon.png";
+import Alert from "../../components/Alert";
 
 export function SignIn() {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ export function SignIn() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  
 
   const togglePassword = () => setShowPassword((prev) => !prev);
 
@@ -32,18 +35,26 @@ export function SignIn() {
 
       const userRef = doc(db, "librarians", user.uid);
       const userSnap = await getDoc(userRef);
-      console.log(email, password)
 
       if (userSnap.exists() && userSnap.data().role === "librarian") {
-        navigate("/dashboard");
+        const userData = userSnap.data();
+
+        Alert.success('Login Berhasil!', 'Selamat datang kembali!');
+
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500); // agar SweetAlert sempat tampil
+
       } else {
         setError("Akun ini tidak memiliki akses sebagai pustakawan.");
       }
+
     } catch (err) {
       console.error(err);
       setError("Email atau password salah.");
     }
   };
+
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 via-teal-200 to-emerald-100 px-4">

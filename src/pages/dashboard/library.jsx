@@ -17,6 +17,7 @@ import {
 } from "@material-tailwind/react";
 import { MagnifyingGlassIcon, HeartIcon, DocumentArrowUpIcon } from "@heroicons/react/24/solid";
 import { bookService } from "../../services/bookServices"; // Import service yang sudah dibuat
+import Alert from "../../components/Alert";
 
 export function Library() {
   // State untuk data buku dari API
@@ -121,10 +122,10 @@ export function Library() {
 
       setOpenAddModal(false);
       await fetchBooks(); // Refresh data
-      alert("Buku berhasil ditambahkan!");
+      Alert.success('Buku berhasil ditambahkan', '');
     } catch (error) {
       console.error('Error adding book:', error);
-      alert("Gagal menambahkan buku. Silakan coba lagi.");
+      Alert.error('Gagal menambahkan buku. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -187,10 +188,10 @@ export function Library() {
       setOpenEditModal(false);
       setSelectedBook(null);
       await fetchBooks(); // Refresh data
-      alert("Perubahan buku berhasil disimpan!");
+      Alert.success('Perubahan berhasil disimpan', '');
     } catch (error) {
       console.error("Error updating book:", error);
-      alert("Gagal menyimpan perubahan. Silakan coba lagi.");
+      Alert.error('Gagal menyimpan perubahan. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -216,11 +217,11 @@ export function Library() {
       setOpenDeleteModal(false);
       setSelectedBook(null);
       await fetchBooks(); // Refresh data
-      alert("Buku berhasil dihapus!");
+      Alert.success('Buku berhasil dihapus', '');
       
     } catch (error) {
       console.error('Error deleting book:', error);
-      alert("Gagal menghapus buku. Silakan coba lagi.");
+      Alert.error('Gagal menghapus buku. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -593,7 +594,7 @@ export function Library() {
                 label="Stock" 
                 name="stock" 
                 type="number"
-                value={formData.availableStock} 
+                value={formData.stock} 
                 onChange={handleInputChange} 
               />
               <Textarea 
