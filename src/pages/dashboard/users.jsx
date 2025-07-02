@@ -22,7 +22,7 @@ export function Users() {
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const rowsPerPage = 10;
 
@@ -40,9 +40,9 @@ export function Users() {
         profileImageUrl: users.profileImageUrl || "/img/default-avatar.jpeg",
         name: users.name || "No name",
         email: users.email || "No Email",
-        address: users.address || "Unknown Book",
+        address: users.address || "Unknown Address",
         status: users.status,
-        role: users.role,
+        
         phone: users.phone,
         createdAt: getDateString(users.createdAt),
       }));
@@ -58,19 +58,19 @@ export function Users() {
     }
   };
     // Filter & pencarian
-  const filteredData = users.filter(({ name, email, address, role, phone }) => {
+  const filteredData = users.filter(({ name, email, address, status, phone }) => {
     const lower = searchTerm.toLowerCase();
     const matchesSearch =
       name.toLowerCase().includes(lower) ||
       email.toLowerCase().includes(lower) ||
       address.toLowerCase().includes(lower) ||
-      role.toLowerCase().includes(lower) ||
+      status.toLowerCase().includes(lower) ||
       phone.toLowerCase().includes(lower);
 
-    const matchesRole =
-      roleFilter === "all" || role === roleFilter;
+    const matchesStatus =
+      statusFilter === "all" || status === statusFilter;
 
-    return matchesSearch && matchesRole;
+    return matchesSearch && matchesStatus;
   });
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
@@ -94,18 +94,18 @@ export function Users() {
     setCurrentPage(page);
   };
 
-  // // Loading state
-  //   if (loading && users.length === 0) {
-  //     return (
-  //       <Card className="mt-8 mb-6 border border-blue-gray-100 shadow-lg">
-  //         <CardBody className="p-6 text-center">
-  //           <Typography variant="h6" color="blue-gray">
-  //             Memuat data users...
-  //           </Typography>
-  //         </CardBody>
-  //       </Card>
-  //     );
-  //   }
+  // Loading state
+  if (loading && users.length === 0) {
+    return (
+      <Card className="mt-8 mb-6 border border-blue-gray-100 shadow-lg">
+        <CardBody className="p-6 text-center">
+          <Typography variant="h6" color="blue-gray">
+            Memuat data users...
+          </Typography>
+        </CardBody>
+      </Card>
+    );
+  }
   
     // Error state
     // if (error) {
@@ -146,9 +146,9 @@ export function Users() {
           />
           <Select
             label="Filter Status"
-            value={roleFilter}
+            value={statusFilter}
             onChange={(val) => {
-              setRoleFilter(val);
+              setStatusFilter(val);
               setCurrentPage(1);
             }}
             className="w-full"
@@ -172,7 +172,7 @@ export function Users() {
             <table className="w-full min-w-[700px] table-auto text-left">
               <thead>
                 <tr>
-                  {["Nama", "Alamat", "Phone", "Status Anggota", "Role",  "Since"].map((el) => (
+                  {["Nama", "Alamat", "Phone", "Status Anggota",  "Since"].map((el) => (
                     <th
                       key={el}
                       className="border-b border-blue-gray-100 py-3 px-5"
@@ -188,7 +188,7 @@ export function Users() {
                 </tr>
               </thead>
               <tbody>
-                {currentData.map(({ profileImageUrl, name, email, address, phone, status, role, createdAt }, idx) => {
+                {currentData.map(({ profileImageUrl, name, email, address, phone, status, createdAt }, idx) => {
                   const className = `py-3 px-5 ${
                     idx === currentData.length - 1 ? "" : "border-b border-blue-gray-100"
                   }`;
@@ -226,14 +226,9 @@ export function Users() {
                             variant="gradient"
                             color={status === "active" ? "green" : "blue"}
                             value={status === "active" ? "Active" : "Purna"}
-                            className="py-0.5 px-3 text-xs font-medium w-fit"
+                            className="py-0.5 px-3 text-xs font-medium w-fit text-center"
                           />
                         </td>
-                      <td className={className}>
-                        <Typography className="text-sm text-center text-blue-grey-800">
-                          {role}
-                        </Typography>
-                      </td>
                       <td className={className}>
                         <Typography className="text-sm text-blue-grey-800">
                           {createdAt}

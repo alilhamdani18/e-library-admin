@@ -75,7 +75,7 @@ export function DashboardNavbar() {
       if(result.isConfirmed) {
         signOut(auth)
           .then(() => {
-            Alert.success('Berhasil logout', '');
+            Alert.success('Berhasil logout', 'Sampai jumpa!');
             setTimeout(() => navigate('/sign-in'), 1500);
           })
           .catch((error) => {

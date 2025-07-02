@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Base URL dari Cloud Run Anda
-const BASE_URL = 'https://library-backend-72451776465.asia-southeast2.run.app'; // Ganti dengan URL Cloud Run Anda
+const BASE_URL = 'https://e-library-backend-72451776465.asia-southeast2.run.app'; // Ganti dengan URL Cloud Run Anda
 
 // Membuat instance axios dengan konfigurasi default
 const api = axios.create({

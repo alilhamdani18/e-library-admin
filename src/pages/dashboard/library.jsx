@@ -14,13 +14,19 @@ import {
   DialogHeader,
   DialogBody,
   DialogFooter,
+  IconButton,
 } from "@material-tailwind/react";
-import { MagnifyingGlassIcon, HeartIcon, DocumentArrowUpIcon } from "@heroicons/react/24/solid";
-import { bookService } from "../../services/bookServices"; // Import service yang sudah dibuat
+import {
+  MagnifyingGlassIcon,
+  HeartIcon,
+  DocumentArrowUpIcon,
+  EyeIcon,
+  CloudArrowDownIcon,
+} from "@heroicons/react/24/solid";
+import { bookService } from "../../services/bookServices";
 import Alert from "../../components/Alert";
 
 export function Library() {
-  // State untuk data buku dari API
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -28,176 +34,194 @@ export function Library() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [searchTerm, setSearchTerm] = useState("");
   const [openAddModal, setOpenAddModal] = useState(false);
-
-  // State untuk edit dan hapus modal
   const [openEditModal, setOpenEditModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [openDetailModal, setOpenDetailModal] = useState(false);
 
-  // Data form tambah & edit
   const [formData, setFormData] = useState({
     title: "",
     author: "",
     year: "",
     category: "",
+    otherCategory: "",
     description: "",
     cover: null,
+    bookFile: null,
     pages: "",
-    stock: "", 
+    stock: "",
   });
 
-  // Data buku yang sedang diedit / dihapus
   const [selectedBook, setSelectedBook] = useState(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const currentPage = 1;
   const itemsPerPage = 12;
 
-  // Fetch data buku saat component mount
+  const predefinedCategories = ["Novel", "Islamic", "Pendidikan", "Kitab", "Motivation", "Others"];
+
   useEffect(() => {
     fetchBooks();
   }, []);
 
-  // Fungsi untuk mengambil data buku dari API
   const fetchBooks = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await bookService.getAllBooks();
       setBooks(data);
-      console.log("Type of books:", typeof data, Array.isArray(data)); // apakah array?
-      console.log("Books data:", data);
     } catch (err) {
-      setError('Gagal memuat data buku');
-      console.error('Error fetching books:', err);
+      setError("Gagal memuat data buku");
+      console.error("Error fetching books:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Generate categories dari data buku yang ada
-  const categories = ["Semua", ...new Set(books.map((book) => book.category).filter(Boolean))];
+  const categories = ["Semua", ...new Set(books.map((book) => book.category).filter(Boolean)), ...predefinedCategories];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    console.log('Selected file:', file);
-    if (file) {
-      setFormData({ ...formData, cover:file });
+  const handleSelectChange = (name, value) => {
+    setFormData({ ...formData, [name]: value });
+    if (name === "category" && value !== "Others") {
+      setFormData((prev) => ({ ...prev, otherCategory: "" }));
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    const { name } = e.target;
+    if (file) {
+      setFormData((prev) => ({ ...prev, [name]: file }));
+    }
+  };
 
-  // Fungsi tambah buku - menggunakan API
   const handleAddBook = async () => {
     try {
       setLoading(true);
 
-      const bookData = {
-        title: formData.title,
-        author: formData.author,
-        stock: parseInt(formData.stock),
-        description: formData.description,
-        category: formData.category,
-        year: parseInt(formData.year),
-        pages: parseInt(formData.pages),
-        file: formData.cover, 
-      };
+      const dataToSend = new FormData();
+      dataToSend.append("title", formData.title);
+      dataToSend.append("author", formData.author);
+      dataToSend.append("year", formData.year);
+      dataToSend.append("description", formData.description);
+      dataToSend.append("pages", formData.pages);
+      dataToSend.append("stock", formData.stock);
+      dataToSend.append("category", formData.category === "Others" ? formData.otherCategory : formData.category);
 
-      await bookService.createBook(bookData);
+      if (formData.cover) {
+        dataToSend.append("cover", formData.cover);
+      }
+      if (formData.bookFile) {
+        dataToSend.append("bookFile", formData.bookFile);
+      }
 
-      // Reset form
+      await bookService.createBook(dataToSend);
+
       setFormData({
         title: "",
         author: "",
         year: "",
         category: "",
+        otherCategory: "",
         description: "",
-        cover: null, // harus sesuai field
+        cover: null,
+        bookFile: null,
         pages: "",
         stock: "",
       });
 
       setOpenAddModal(false);
-      await fetchBooks(); // Refresh data
-      Alert.success('Buku berhasil ditambahkan', '');
+      await fetchBooks();
+      Alert.success("Buku berhasil ditambahkan", "");
     } catch (error) {
-      console.error('Error adding book:', error);
-      Alert.error('Gagal menambahkan buku. Silakan coba lagi.');
+      console.error("Error adding book:", error);
+      Alert.error("Gagal menambahkan buku. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
   };
 
-
-  // Fungsi saat klik tombol Edit → buka modal edit dan isi form dengan data buku
   const handleEdit = (bookId) => {
     const book = books.find((b) => b.id === bookId);
     if (book) {
+      const isOtherCategory = predefinedCategories.includes(book.category) ? book.category : "Others";
       setFormData({
         title: book.title || "",
         author: book.author || "",
         year: book.year?.toString() || "",
-        category: book.category || "",
+        category: isOtherCategory,
+        otherCategory: isOtherCategory === "Others" ? book.category : "",
         description: book.description || "",
-        cover: null, // clear file input
-        previewUrl: book.coverUrl || null, // for preview
+        cover: null, 
+        bookFile: null,
         pages: book.pages?.toString() || "",
-        stock: book.availableStock?.toString() || "",
+        stock: book.stock?.toString() || "",
       });
       setSelectedBook(book);
-      setOpenEditModal(true);
+      setOpenEditModal(true); 
+    } else {
+      console.warn(`Book with ID ${bookId} not found for editing.`);
     }
   };
 
 
-  // Fungsi simpan perubahan edit buku - menggunakan API
   const handleSaveEdit = async () => {
     if (!selectedBook) return;
 
     try {
       setLoading(true);
 
-      const bookData = {
-        title: formData.title,
-        author: formData.author,
-        year: parseInt(formData.year),
-        description: formData.description,
-        category: formData.category,
-        stock: formData.stock,
-        pages: parseInt(formData.pages),
-        file: formData.cover, // jika file baru diunggah
-      };
+      const dataToSend = new FormData();
+      if (formData.title !== selectedBook.title) dataToSend.append("title", formData.title);
+      if (formData.author !== selectedBook.author) dataToSend.append("author", formData.author);
+      // Gunakan Number() untuk memastikan perbandingan yang benar jika asalnya string
+      if (Number(formData.year) !== selectedBook.year) dataToSend.append("year", formData.year);
+      if (formData.description !== selectedBook.description) dataToSend.append("description", formData.description);
+      if (Number(formData.pages) !== selectedBook.pages) dataToSend.append("pages", formData.pages);
+      if (Number(formData.stock) !== selectedBook.stock) dataToSend.append("stock", formData.stock);
 
-      await bookService.updateBook(selectedBook.id, bookData); // Pastikan ini POST multipart/form-data
+      const newCategory = formData.category === "Others" ? formData.otherCategory : formData.category;
+      if (newCategory !== selectedBook.category) {
+        dataToSend.append("category", newCategory);
+      }
+
+      if (formData.cover) {
+        dataToSend.append("cover", formData.cover);
+      }
+      if (formData.bookFile) {
+        dataToSend.append("bookFile", formData.bookFile);
+      }
+      
+      await bookService.updateBook(selectedBook.id, dataToSend);
 
       setFormData({
         title: "",
         author: "",
         year: "",
         category: "",
+        otherCategory: "",
         description: "",
         cover: null,
-        previewUrl: null,
+        bookFile: null,
         pages: "",
         stock: "",
       });
 
       setOpenEditModal(false);
-      setSelectedBook(null);
-      await fetchBooks(); // Refresh data
-      Alert.success('Perubahan berhasil disimpan', '');
+      setSelectedBook(null); 
+      await fetchBooks();
+      Alert.success("Perubahan berhasil disimpan", "");
     } catch (error) {
       console.error("Error updating book:", error);
-      Alert.error('Gagal menyimpan perubahan. Silakan coba lagi.');
+      Alert.error("Gagal menyimpan perubahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fungsi saat klik tombol Hapus → buka modal konfirmasi hapus
   const handleDelete = (bookId) => {
     const book = books.find((b) => b.id === bookId);
     if (book) {
@@ -206,30 +230,39 @@ export function Library() {
     }
   };
 
-  // Fungsi konfirmasi hapus buku - menggunakan API
   const confirmDelete = async () => {
     if (!selectedBook) return;
-    
+
     try {
       setLoading(true);
       await bookService.deleteBook(selectedBook.id);
-      
+
       setOpenDeleteModal(false);
       setSelectedBook(null);
-      await fetchBooks(); // Refresh data
-      Alert.success('Buku berhasil dihapus', '');
-      
+      await fetchBooks();
+      Alert.success("Buku berhasil dihapus", "");
     } catch (error) {
-      console.error('Error deleting book:', error);
-      Alert.error('Gagal menghapus buku. Silakan coba lagi.');
+      console.error("Error deleting book:", error);
+      Alert.error("Gagal menghapus buku. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleViewDetails = (bookId) => {
+    const book = books.find((b) => b.id === bookId);
+    if (book) {
+      setSelectedBook(book);
+      setOpenDetailModal(true);
+    }
+  };
+
   const filteredBooks = books.filter((book) => {
     const matchCategory = selectedCategory === "Semua" || book.category === selectedCategory;
-    const matchSearch = book.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+    const matchSearch =
+      book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      false;
     return matchCategory && matchSearch;
   });
 
@@ -237,7 +270,6 @@ export function Library() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentBooks = filteredBooks.slice(startIndex, startIndex + itemsPerPage);
 
-  // Loading state
   if (loading && books.length === 0) {
     return (
       <Card className="mt-8 mb-6 border border-blue-gray-100 shadow-lg">
@@ -249,22 +281,6 @@ export function Library() {
       </Card>
     );
   }
-
-  // Error state
-  // if (error) {
-  //   return (
-  //     <Card className="mt-8 mb-6 border border-red-100 shadow-lg">
-  //       <CardBody className="p-6 text-center">
-  //         <Typography variant="h6" color="red">
-  //           {error}
-  //         </Typography>
-  //         <Button color="blue" onClick={fetchBooks} className="mt-4">
-  //           Coba Lagi
-  //         </Button>
-  //       </CardBody>
-  //     </Card>
-  //   );
-  // }
 
   return (
     <>
@@ -281,7 +297,21 @@ export function Library() {
             </div>
             <Button
               color="green"
-              onClick={() => setOpenAddModal(true)}
+              onClick={() => {
+                setOpenAddModal(true);
+                setFormData({
+                  title: "",
+                  author: "",
+                  year: "",
+                  category: "",
+                  otherCategory: "",
+                  description: "",
+                  cover: null,
+                  bookFile: null,
+                  pages: "",
+                  stock: "",
+                });
+              }}
               className="flex items-center gap-2"
               disabled={loading}
             >
@@ -321,86 +351,68 @@ export function Library() {
                 Tidak ada buku ditemukan
               </Typography>
               <Typography variant="small" color="gray">
-                {searchTerm || selectedCategory !== "Semua" 
+                {searchTerm || selectedCategory !== "Semua"
                   ? "Coba ubah filter atau kata kunci pencarian"
                   : "Belum ada buku yang tersedia"}
               </Typography>
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {currentBooks.map((book) => (
                 <Card
                   key={book.id}
-                  className="border border-gray-200 shadow-md overflow-hidden flex flex-row sm:flex-col h-full"
+                  className="border border-gray-200 shadow-md overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => handleViewDetails(book.id)}
                 >
-                  {/* Card Header */}
-                  <CardHeader
-                    floated={false}
-                    color="gray"
-                    className="h-56 flex-shrink-0"
-                  >
+                  <CardHeader floated={false} color="gray" className="h-56 flex-shrink-0 relative">
                     <img
                       src={book.coverUrl || "/img/default-book.jpeg"}
                       alt={book.title}
-                      className="w-36 h-full sm:w-full object-cover"
+                      className="w-full h-full object-cover"
                     />
                   </CardHeader>
 
-                  {/* Card Body + Footer */}
-                  <div className="mt-2 flex flex-col justify-between flex-1">
-                    <CardBody className="py-1 px-4 flex-1">
-                      <Typography variant="h6" color="green" className="">
-                        {book.title}
-                      </Typography>
-                      <Typography variant="small" className="blue-grey mb-3 italic">
-                        {book.author} &middot; {book.publicationYear || book.year}
-                      </Typography>
-                      <Typography className="text-gray-600 text-sm mb-2 line-clamp-3">
-                        {book.description}
-                      </Typography>
-                      <Typography variant="small" className="text-gray-600 font-bold">
-                        Jumlah Halaman: {book.pages}
-                      </Typography>
-                      <Typography variant="small" className="text-gray-600 mb-2 font-bold">
-                        Stok Tersedia: {book.availableStock || 0}
-                      </Typography>
-                      <Typography variant="small" className="text-yellow-800 font-semibold mb-1">
-                        Rating: {book.rating || "Belum ada rating"}
-                      </Typography>
-                      <Typography
-                        variant="small"
-                        className="text-red-400 font-medium flex items-center gap-1"
-                      >
-                        <HeartIcon className="h-4 w-4" /> {book.likes || 0} suka
-                      </Typography>
-                    </CardBody>
+                  <CardBody className="py-2 px-4 flex-1">
+                    <Typography variant="h6" color="green" className="truncate">
+                      {book.title}
+                    </Typography>
+                    <Typography variant="small" className="blue-grey italic truncate">
+                      {book.author}
+                    </Typography>
+                    <Typography variant="small" className="text-blue-600 font-bold mt-1">
+                      Stok: {book.stock || 0}
+                    </Typography>
+                  </CardBody>
 
-                    <CardFooter className="flex gap-2 px-4 pb-4">
-                      <Button
-                        size="sm"
-                        color="blue"
-                        onClick={() => handleEdit(book.id)}
-                        disabled={loading}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        color="red"
-                        onClick={() => handleDelete(book.id)}
-                        disabled={loading}
-                      >
-                        Hapus
-                      </Button>
-                    </CardFooter>
-                  </div>
+                  <CardFooter className="flex justify-start gap-2 px-4 pb-4 pt-4">
+                    <Button
+                      size="sm"
+                      color="blue"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(book.id);
+                      }}
+                      disabled={loading}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      color="red"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(book.id);
+                      }}
+                      disabled={loading}
+                    >
+                      Hapus
+                    </Button>
+                  </CardFooter>
                 </Card>
-
               ))}
             </div>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="mt-8 flex justify-center items-center gap-2">
               <Button
@@ -437,189 +449,304 @@ export function Library() {
               </Button>
             </div>
           )}
-
         </CardBody>
       </Card>
 
       {/* Modal Tambah Buku */}
-      <Dialog open={openAddModal} handler={() => setOpenAddModal(!openAddModal)} size="md">
+      <Dialog open={openAddModal} handler={() => setOpenAddModal(!openAddModal)} size="lg">
         <DialogHeader className="justify-center">Tambah Buku Baru</DialogHeader>
         <DialogBody divider className="max-h-[80vh] overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Upload Cover */}
-            <div
-              className="flex flex-col items-center justify-center border-2 border-dashed border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors rounded-xl p-6 text-center cursor-pointer h-full"
-              onClick={() => document.getElementById("file-upload").click()}
-            >
-              <img src="/img/upload-icon.png" alt="Upload Icon" className="w-12 h-12 mb-2 opacity-80" />
-              <p className="text-blue-600 font-medium">
-                {formData.cover ? formData.cover.name : "Drag & Drop atau Klik untuk Upload Cover"}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">Supports: JPG, JPEG, PNG</p>
-              <input
-                id="file-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col items-center p-2 border border-blue-gray-100 rounded-lg shadow-sm">
+                <Typography variant="h6" color="blue-gray" className="mb-2">
+                  Upload Cover Buku
+                </Typography>
+                <div
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors rounded-xl p-4 text-center cursor-pointer w-full h-36"
+                  onClick={() => document.getElementById("cover-upload-add").click()}
+                >
+                  <img src="/img/upload-icon.png" alt="Upload Icon" className="w-10 h-10 mb-1 opacity-80" />
+                  <p className="text-blue-600 font-medium text-xs">
+                    {formData.cover ? formData.cover.name : "Klik untuk Upload Cover"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">Supports: JPG, JPEG, PNG (Max 5MB)</p>
+                  <input
+                    id="cover-upload-add"
+                    type="file"
+                    name="cover"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center p-2 border border-blue-gray-100 rounded-lg shadow-sm">
+                <Typography variant="h6" color="blue-gray" className="mb-2">
+                  Upload File Buku (PDF/EPUB)
+                </Typography>
+                <div
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-green-200 bg-green-50 hover:bg-green-100 transition-colors rounded-xl p-4 text-center cursor-pointer w-full h-36"
+                  onClick={() => document.getElementById("book-file-upload-add").click()}
+                >
+                  <img src="/img/pdf-icon.png" alt="PDF Icon" className="w-10 h-10 mb-1 opacity-80" />
+                  <p className="text-green-600 font-medium text-xs">
+                    {formData.bookFile ? formData.bookFile.name : "Klik untuk Upload File Buku"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">Supports: PDF, EPUB (Max 10MB)</p>
+                  <input
+                    id="book-file-upload-add"
+                    type="file"
+                    name="bookFile"
+                    accept=".pdf,.epub"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Form Input */}
-            <div className="col-span-1 md:col-span-2 flex flex-col gap-4">
-              <Input 
-                label="Judul" 
-                name="title" 
-                onChange={handleInputChange} 
+            <div className="flex flex-col gap-4">
+              <Input
+                label="Judul"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
               />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input 
-                  label="Penulis" 
-                  name="author" 
-                  onChange={handleInputChange} 
-                />
-                <Input 
-                  label="Tahun Terbit" 
-                  name="year" 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input 
-                  label="Kategori" 
-                  name="category" 
-                  onChange={handleInputChange} 
-                />
-                <Input 
-                  label="Jumlah Halaman" 
-                  name="pages" 
-                  onChange={handleInputChange} 
-                  type="number"
-                />
-              </div>
-              <Input 
-                label="Stock" 
-                name="stock" 
+              <Input
+                label="Penulis"
+                name="author"
+                value={formData.author}
+                onChange={handleInputChange}
+                required
+              />
+              <Input
+                label="Tahun Terbit"
+                name="year"
+                value={formData.year}
+                onChange={handleInputChange}
                 type="number"
-                onChange={handleInputChange} 
               />
-              <Textarea 
-                label="Deskripsi" 
-                name="description" 
-                onChange={handleInputChange} 
+              <Select
+                label="Kategori"
+                name="category"
+                value={formData.category}
+                onChange={(val) => handleSelectChange("category", val)}
+                required
+              >
+                {predefinedCategories.map((cat) => (
+                  <Option key={cat} value={cat}>
+                    {cat}
+                  </Option>
+                ))}
+              </Select>
+              {formData.category === "Others" && (
+                <Input
+                  label="Kategori Lainnya"
+                  name="otherCategory"
+                  value={formData.otherCategory}
+                  onChange={handleInputChange}
+                  required={formData.category === "Others"}
+                />
+              )}
+              <Input
+                label="Jumlah Halaman"
+                name="pages"
+                value={formData.pages}
+                onChange={handleInputChange}
+                type="number"
+              />
+              <Input
+                label="Stock"
+                name="stock"
+                type="number"
+                value={formData.stock}
+                onChange={handleInputChange}
+              />
+              <Textarea
+                label="Deskripsi"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
               />
             </div>
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button 
-            variant="text" 
-            color="gray" 
-            onClick={() => setOpenAddModal(false)} 
+          <Button
+            variant="text"
+            color="gray"
+            onClick={() => setOpenAddModal(false)}
             className="mr-1"
             disabled={loading}
           >
             Batal
           </Button>
-          <Button 
-            color="green" 
+          <Button
+            color="green"
             onClick={handleAddBook}
-            disabled={loading || !formData.title || !formData.author}
+            disabled={loading || !formData.title || !formData.author || !formData.category || (formData.category === "Others" && !formData.otherCategory)}
           >
             {loading ? "Menyimpan..." : "Simpan"}
           </Button>
         </DialogFooter>
       </Dialog>
 
-      {/* Modal Edit Buku */}
-      <Dialog open={openEditModal} handler={() => setOpenEditModal(!openEditModal)} size="md">
+      <Dialog open={openEditModal} handler={() => setOpenEditModal(!openEditModal)} size="lg">
         <DialogHeader className="justify-center">Edit Buku</DialogHeader>
         <DialogBody divider className="max-h-[80vh] overflow-y-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div
-              className="flex flex-col items-center justify-center border-2 border-dashed border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors rounded-xl p-6 text-center cursor-pointer h-full"
-              onClick={() => document.getElementById("file-upload-edit").click()}
-            >
-              <img src="/img/upload-icon.png" alt="Upload Icon" className="w-12 h-12 mb-2 opacity-80" />
-              <p className="text-blue-600 font-medium">
-                {formData.cover ? formData.cover.name : "Drag & Drop atau Klik untuk Upload Cover"}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">Supports: JPG, JPEG, PNG</p>
-              <input
-                id="file-upload-edit"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </div>
+          {selectedBook && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col items-center p-2 border border-blue-gray-100 rounded-lg shadow-sm">
+                  <Typography variant="h6" color="blue-gray" className="mb-2">
+                    Edit Cover Buku
+                  </Typography>
+                  <div
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors rounded-xl p-4 text-center cursor-pointer w-full h-36 relative"
+                    onClick={() => document.getElementById("cover-upload-edit").click()}
+                  >
+                    {selectedBook.coverUrl && !formData.cover ? (
+                      <img
+                        src={selectedBook.coverUrl}
+                        alt="Current Cover"
+                        className="absolute inset-0 w-full h-full object-cover rounded-xl opacity-70"
+                      />
+                    ) : (
+                      <img src="/img/upload-icon.png" alt="Upload Icon" className="w-10 h-10 mb-1 opacity-80" />
+                    )}
+                    <div className="relative z-10 text-center">
+                      <p className="text-blue-600 font-medium text-xs">
+                        {formData.cover ? formData.cover.name : "Klik untuk Upload Cover Baru"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">Supports: JPG, JPEG, PNG (Max 5MB)</p>
+                    </div>
+                    <input
+                      id="cover-upload-edit"
+                      type="file"
+                      name="cover"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                </div>
 
-            <div className="col-span-1 sm:col-span-2 flex flex-col gap-4">
-              <Input 
-                label="Judul" 
-                name="title" 
-                value={formData.title} 
-                onChange={handleInputChange} 
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input 
-                  label="Penulis" 
-                  name="author" 
-                  value={formData.author} 
-                  onChange={handleInputChange} 
-                />
-                <Input 
-                  label="Tahun Terbit" 
-                  name="year" 
-                  value={formData.year} 
-                  onChange={handleInputChange} 
-                />
+                <div className="flex flex-col items-center p-2 border border-blue-gray-100 rounded-lg shadow-sm">
+                  <Typography variant="h6" color="blue-gray" className="mb-2">
+                    Edit File Buku (PDF/EPUB)
+                  </Typography>
+                  <div
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-green-200 bg-green-50 hover:bg-green-100 transition-colors rounded-xl p-4 text-center cursor-pointer w-full h-36 relative"
+                    onClick={() => document.getElementById("book-file-upload-edit").click()}
+                  >
+                    {selectedBook.bookFileUrl && !formData.bookFile ? (
+                      <CloudArrowDownIcon className="w-10 h-10 mb-1 text-green-700 opacity-80" />
+                    ) : (
+                      <img src="/img/pdf-icon.png" alt="PDF Icon" className="w-10 h-10 mb-1 opacity-80" />
+                    )}
+                    <div className="relative z-10 text-center">
+                      <p className="text-green-600 font-medium text-xs">
+                        {formData.bookFile ? formData.bookFile.name : selectedBook.bookFileUrl ? `File saat ini: ${selectedBook.bookFileUrl.split('/').pop()}` : "Klik untuk Upload File Buku Baru"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">Supports: PDF, EPUB (Max 10MB)</p>
+                    </div>
+                    <input
+                      id="book-file-upload-edit"
+                      type="file"
+                      name="bookFile"
+                      accept=".pdf,.epub"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input 
-                  label="Kategori" 
-                  name="category" 
-                  value={formData.category} 
-                  onChange={handleInputChange} 
+
+              <div className="flex flex-col gap-4">
+                <Input
+                  label="Judul"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  required
                 />
-                <Input 
-                  label="Jumlah Halaman" 
-                  name="pages" 
-                  value={formData.pages} 
-                  onChange={handleInputChange} 
+                <Input
+                  label="Penulis"
+                  name="author"
+                  value={formData.author}
+                  onChange={handleInputChange}
+                  required
+                />
+                <Input
+                  label="Tahun Terbit"
+                  name="year"
+                  value={formData.year}
+                  onChange={handleInputChange}
                   type="number"
                 />
+                <Select
+                  label="Kategori"
+                  name="category"
+                  value={formData.category}
+                  onChange={(val) => handleSelectChange("category", val)}
+                  required
+                >
+                  {predefinedCategories.map((cat) => (
+                    <Option key={cat} value={cat}>
+                      {cat}
+                    </Option>
+                  ))}
+                </Select>
+                {formData.category === "Others" && (
+                  <Input
+                    label="Kategori Lainnya"
+                    name="otherCategory"
+                    value={formData.otherCategory}
+                    onChange={handleInputChange}
+                    required={formData.category === "Others"}
+                  />
+                )}
+                <Input
+                  label="Jumlah Halaman"
+                  name="pages"
+                  value={formData.pages}
+                  onChange={handleInputChange}
+                  type="number"
+                />
+                <Input
+                  label="Stock"
+                  name="stock"
+                  type="number"
+                  value={formData.stock}
+                  onChange={handleInputChange}
+                />
+                <Textarea
+                  label="Deskripsi"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                />
               </div>
-              <Input 
-                label="Stock" 
-                name="stock" 
-                type="number"
-                value={formData.stock} 
-                onChange={handleInputChange} 
-              />
-              <Textarea 
-                label="Deskripsi" 
-                name="description" 
-                value={formData.description} 
-                onChange={handleInputChange} 
-              />
             </div>
-          </div>
+          )}
         </DialogBody>
         <DialogFooter>
-          <Button 
-            variant="text" 
-            color="gray" 
-            onClick={() => setOpenEditModal(false)} 
+          <Button
+            variant="text"
+            color="gray"
+            onClick={() => setOpenEditModal(false)}
             className="mr-1"
             disabled={loading}
           >
             Batal
           </Button>
-          <Button 
-            color="blue" 
+          <Button
+            color="blue"
             onClick={handleSaveEdit}
-            disabled={loading || !formData.title || !formData.author}
+            disabled={loading || !formData.title || !formData.author || !formData.category || (formData.category === "Others" && !formData.otherCategory)}
           >
             {loading ? "Menyimpan..." : "Simpan Perubahan"}
           </Button>
@@ -636,21 +763,80 @@ export function Library() {
           </Typography>
         </DialogBody>
         <DialogFooter>
-          <Button 
-            variant="text" 
-            color="gray" 
-            onClick={() => setOpenDeleteModal(false)} 
+          <Button
+            variant="text"
+            color="gray"
+            onClick={() => setOpenDeleteModal(false)}
             className="mr-1"
             disabled={loading}
           >
             Batal
           </Button>
-          <Button 
-            color="red" 
-            onClick={confirmDelete}
-            disabled={loading}
-          >
+          <Button color="red" onClick={confirmDelete} disabled={loading}>
             {loading ? "Menghapus..." : "Hapus"}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Modal Detail Buku */}
+      <Dialog open={openDetailModal} handler={() => setOpenDetailModal(!openDetailModal)} size="md">
+        <DialogHeader className="justify-center">Detail Buku</DialogHeader>
+        <DialogBody divider className="max-h-[80vh] overflow-y-auto">
+          {selectedBook && (
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="w-full md:w-1/3 flex-shrink-0">
+                <img
+                  src={selectedBook.coverUrl || "/img/default-book.jpeg"}
+                  alt={selectedBook.title}
+                  className="w-full h-auto rounded-lg shadow-md"
+                />
+              </div>
+              <div className="w-full md:w-2/3">
+                <Typography variant="h5" color="blue-gray" className="mb-2">
+                  {selectedBook.title}
+                </Typography>
+                <Typography variant="paragraph" color="gray" className="mb-1">
+                  Penulis: {selectedBook.author}
+                </Typography>
+                <Typography variant="paragraph" color="gray" className="mb-1">
+                  Tahun Terbit: {selectedBook.year}
+                </Typography>
+                <Typography variant="paragraph" color="gray" className="mb-1">
+                  Kategori: {selectedBook.category}
+                </Typography>
+                <Typography variant="paragraph" color="gray" className="mb-1">
+                  Jumlah Halaman: {selectedBook.pages || "N/A"}
+                </Typography>
+                <Typography variant="paragraph" color="gray" className="mb-1">
+                  Stok Tersedia: {selectedBook.stock || 0}
+                </Typography>
+                <Typography variant="h6" color="blue-gray" className="mt-4 mb-2">
+                  Deskripsi:
+                </Typography>
+                <Typography variant="paragraph" color="blue-gray" className="text-justify">
+                  {selectedBook.description || "Tidak ada deskripsi."}
+                </Typography>
+                {selectedBook.bookFileUrl && (
+                  <Button
+                    color="green"
+                    className="mt-4 flex items-center gap-2"
+                    onClick={() => window.open(selectedBook.bookFileUrl, '_blank')}
+                  >
+                    <EyeIcon className="h-4 w-4" /> Baca Buku
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="text"
+            color="gray"
+            onClick={() => setOpenDetailModal(false)}
+            className="mr-1"
+          >
+            Tutup
           </Button>
         </DialogFooter>
       </Dialog>

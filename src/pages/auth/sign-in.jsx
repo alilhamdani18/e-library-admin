@@ -26,34 +26,33 @@ export function SignIn() {
   const togglePassword = () => setShowPassword((prev) => !prev);
 
   const handleSignIn = async (e) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+    const user = userCredential.user;
 
-      const userRef = doc(db, "librarians", user.uid);
-      const userSnap = await getDoc(userRef);
+    const userRef = doc(db, "librarians", user.uid);
+    const userSnap = await getDoc(userRef);
 
-      if (userSnap.exists() && userSnap.data().role === "librarian") {
-        const userData = userSnap.data();
+    if (userSnap.exists() && userSnap.data().role === "librarian") {
+      Alert.success('Login Berhasil!', 'Selamat datang kembali!');
 
-        Alert.success('Login Berhasil!', 'Selamat datang kembali!');
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1500); // agar SweetAlert sempat tampil
-
-      } else {
-        setError("Akun ini tidak memiliki akses sebagai pustakawan.");
-      }
-
-    } catch (err) {
-      console.error(err);
-      setError("Email atau password salah.");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500); // memberi waktu untuk alert tampil
+    } else {
+      Alert.error('Akses Ditolak', 'Akun ini tidak memiliki akses sebagai pustakawan.');
+      return;
     }
-  };
+
+  } catch (err) {
+    console.error(err);
+    Alert.error('Login Gagal', 'Email atau password salah.');
+  }
+};
+
 
 
   return (

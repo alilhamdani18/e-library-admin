@@ -7,19 +7,32 @@ import {
   Typography,
   Button,
   Input,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
 } from "@material-tailwind/react";
 import { librarianServices } from "@/services/librarianServices";
-import { getAuth } from "firebase/auth";
+import { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import Alert from "@/components/Alert";
+
 export function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [originalPhoto, setOriginalPhoto] = useState(null); // untuk upload file asli
+  const [originalPhotoFile, setOriginalPhotoFile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-  // Ambil data pustakawan dari API saat komponen dimuat
+  const [librarianId, setLibrarianId] = useState(null); 
+
   useEffect(() => {
     fetchProfile();
   }, []);
+
   const fetchProfile = async () => {
     try {
       const auth = getAuth();
@@ -27,17 +40,18 @@ export function Profile() {
 
       if (!user) throw new Error("User belum login");
 
-      const uid = user.uid; 
-
+      const uid = user.uid;
+      setLibrarianId(uid);
       const data = await librarianServices.getLibrarianProfile(uid);
-      console.log(data);
       setProfileData(data);
     } catch (error) {
       console.error("Gagal mengambil profil:", error);
+      Alert.error('Gagal!', 'Gagal mengambil data profil.');
     } finally {
       setLoading(false);
     }
   };
+
   const handleChange = (e) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
   };
@@ -46,57 +60,121 @@ export function Profile() {
     const file = e.target.files[0];
     if (file) {
       const tempURL = URL.createObjectURL(file);
-      setOriginalPhoto(file);
-      setProfileData({ ...profileData, photo: tempURL }); // preview
+      setOriginalPhotoFile(file);
+      setProfileData({ ...profileData, profileImageUrl: tempURL });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      let updatedData = { ...profileData };
+    if (!librarianId) {
+      Alert.error('Oops...', 'ID Librarian tidak ditemukan.');
+      return;
+    }
 
-      // Jika ada file baru, upload dulu dan dapatkan URL-nya
-      if (originalPhoto) {
-        const formData = new FormData();
-        formData.append("photo", originalPhoto);
-        const response = await librarianServices.uploadPhoto(formData); // pastikan method ini ada
-        updatedData.photo = response.url; // Sesuaikan key-nya
+    try {
+      setLoading(true);
+
+      const dataToSend = {
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        address: profileData.address || '',
+        role: profileData.role || '',
+      };
+
+      if (originalPhotoFile) {
+        dataToSend.profilePhotoFile = originalPhotoFile;
       }
 
-      await librarianServices.updateProfile(updatedData);
+      await librarianServices.updateLibrarianProfile(librarianId, dataToSend); 
+      
+      await fetchProfile(); 
+
       setIsEditing(false);
+      setOriginalPhotoFile(null); 
+      Alert.success('Berhasil!', 'Profil berhasil diperbarui!');
     } catch (error) {
       console.error("Gagal memperbarui profil:", error);
+      Alert.error('Oops...', 'Gagal memperbarui profil!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError("");
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("Kata sandi baru tidak cocok.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("Kata sandi baru minimal 6 karakter.");
+      return;
+    }
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      setPasswordError("User belum login.");
+      return;
+    }
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
+      Alert.success('Berhasil!', 'Kata sandi berhasil diubah!');
+      setShowPasswordDialog(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordError("");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      let errorMessage = "Gagal mengubah kata sandi.";
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = "Kata sandi saat ini salah.";
+      } else if (error.code === 'auth/requires-recent-login') {
+        errorMessage = "Silakan login kembali untuk mengubah kata sandi Anda.";
+      } else {
+        errorMessage = `Gagal mengubah kata sandi: ${error.message}`;
+      }
+      setPasswordError(errorMessage); 
+      Alert.error('Oops...', errorMessage); 
     }
   };
 
   if (loading || !profileData) {
-    return <div className="text-center mt-10">Memuat data profil...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <Typography variant="h5" color="blue-gray">Memuat data profil...</Typography>
+      </div>
+    );
   }
 
-  const maskedPassword = "•".repeat(16);
-
   return (
-    <div className="flex justify-center mt-6 px-4">
-      <Card className="w-full max-w-5xl p-4 shadow-lg rounded-xl">
+    <div className="flex justify-center py-8 px-4 sm:px-6 lg:px-8 bg-gray-50 min-h-screen">
+      <Card className="w-full max-w-4xl p-0 shadow-xl rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <CardHeader
           floated={false}
-          className="h-52 mb-4 bg-gradient-to-tr from-green-600 to-teal-500 flex justify-center items-center relative"
+          className="h-56 bg-gradient-to-br from-blue-600 to-light-blue-400 flex justify-center items-center rounded-b-3xl overflow-hidden shadow-lg"
         >
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center absolute">
             <Avatar
-              src={profileData.profileImageUrl}
+              src={profileData.profileImageUrl || "/img/default-avatar.png"} 
               alt="Profile Picture"
               size="xxl"
               variant="circular"
-              className="border-4 border-white shadow-lg"
+              className="border-6 border-white shadow-xl ring-4 ring-blue-200 transition-all duration-300 hover:scale-105"
             />
             {isEditing && (
-              <div className="mt-4 flex flex-col items-center">
-                <label className="cursor-pointer bg-white text-sm text-blue-600 font-medium py-2 px-4 border border-blue-500 rounded-lg shadow hover:bg-blue-50 transition duration-300">
-                  Upload Foto Baru
+              <div className="mt-5">
+                <label htmlFor="photo-upload" className="cursor-pointer bg-white text-sm text-blue-600 font-medium py-2 px-5 border border-blue-500 rounded-full shadow-md hover:bg-blue-50 transition duration-300 transform hover:scale-105 flex items-center gap-2">
+                  <i className="fa-solid fa-camera"></i> Upload Foto Baru
                   <input
+                    id="photo-upload"
                     type="file"
                     accept="image/*"
                     className="hidden"
@@ -108,98 +186,175 @@ export function Profile() {
           </div>
         </CardHeader>
 
-        <CardBody className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <CardBody className="px-8 pb-8 pt-16">
           {!isEditing ? (
-            <>
-              <div>
-                <Typography variant="h5" color="blue-gray">
-                  {profileData.name}
-                </Typography>
-                <Typography color="gray" className="mb-2">
-                  {profileData.role}
-                </Typography>
-                <Typography color="blue-gray">
-                  {profileData.bio}
-                </Typography>
-              </div>
-              <div>
-                <Typography variant="small" color="blue-gray" className="mb-1">
-                  Email: {profileData.email}
-                </Typography>
-                <Typography variant="small" color="blue-gray">
-                  Telepon: {profileData.phone}
-                </Typography>
-                <Typography variant="small" color="blue-gray" className="mt-4">
-                  {" "}
-                  <span className="font-mono tracking-widest">
-                    {maskedPassword}
-                  </span>
-                </Typography>
-                <div className="mt-6">
-                  <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+            <div className="md:text-left">
+              <Typography variant="h3" color="blue-gray" className="mb-2 font-bold leading-tight">
+                {profileData.name || ""}
+              </Typography>
+              <Typography color="blue" className="mb-8 text-lg font-semibold uppercase">
+                {profileData.role || ""}
+              </Typography>
+
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <i className="fa-solid fa-envelope text-xl text-blue-500 pt-1"></i>
+                  <div>
+                    <Typography variant="small" color="gray" className="font-semibold">Email</Typography>
+                    <Typography variant="lead" color="blue-gray" className="font-normal">{profileData.email || ""}</Typography>
+                  </div>
                 </div>
+
+                <div className="flex items-start gap-4">
+                  <i className="fa-solid fa-phone text-xl text-blue-500 pt-1"></i>
+                  <div>
+                    <Typography variant="small" color="gray" className="font-semibold">Telepon</Typography>
+                    <Typography variant="lead" color="blue-gray" className="font-normal">{profileData.phone || ""}</Typography>
+                  </div>
+                </div>
+
+                {profileData.address && (
+                    <div className="flex items-start gap-4">
+                        <i className="fa-solid fa-map-marker-alt text-xl text-blue-500 pt-1"></i>
+                        <div>
+                            <Typography variant="small" color="gray" className="font-semibold">Alamat</Typography>
+                            <Typography variant="lead" color="blue-gray" className="font-normal">{profileData.address || ""}</Typography>
+                        </div>
+                    </div>
+                )}
               </div>
-            </>
+
+              <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                <Button onClick={() => setIsEditing(true)} color="blue" className="flex items-center gap-2 px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+                  <i className="fa-solid fa-edit"></i> Edit Profil
+                </Button>
+                <Button onClick={() => setShowPasswordDialog(true)} color="red" variant="outlined" className="flex items-center gap-2 px-6 py-3 rounded-lg border-red-500 text-red-500 hover:bg-red-50 transition-all duration-300">
+                  <i className="fa-solid fa-lock"></i> Ubah Kata Sandi
+                </Button>
+              </div>
+            </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
               <Input
                 label="Nama Lengkap"
                 name="name"
-                value={profileData.name}
+                value={profileData.name || ""}
                 onChange={handleChange}
+                size="lg"
+                className="md:col-span-1"
               />
               <Input
                 label="Email"
                 name="email"
-                value={profileData.email}
+                value={profileData.email || ""}
                 onChange={handleChange}
+                size="lg"
+                disabled
+                className="md:col-span-1"
               />
               <Input
                 label="Telepon"
                 name="phone"
-                value={profileData.phone}
+                value={profileData.phone || ""}
                 onChange={handleChange}
+                size="lg"
+                className="md:col-span-1"
+              />
+              <Input
+                label="Alamat"
+                name="address"
+                value={profileData.address || ""}
+                onChange={handleChange}
+                size="lg"
+                className="md:col-span-1"
               />
               <Input
                 label="Jabatan"
                 name="role"
-                value={profileData.role}
+                value={profileData.role || ""}
                 onChange={handleChange}
+                size="lg"
+                className="md:col-span-1"
               />
-              <div className="col-span-1 md:col-span-2">
-                <Input
-                  label="Bio"
-                  name="bio"
-                  value={profileData.bio}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="col-span-1 md:col-span-2">
-                <Input
-                  label="Password (Hashed)"
-                  type="password"
-                  name="password"
-                  value={profileData.password}
-                  onChange={handleChange}
-                  className="font-mono"
-                />
-              </div>
-              {/* Tambahan opsional untuk konfirmasi password bisa ditambahkan validasi nanti */}
-              <div className="flex gap-3 mt-4">
-                <Button type="submit" color="blue">
-                  Simpan
+
+              <div className="flex gap-4 mt-6 col-span-full justify-end">
+                <Button 
+                  type="submit" 
+                  color="blue" 
+                  className="px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                  disabled={loading}
+                >
+                  {loading ? "Menyimpan..." : <><i className="fa-solid fa-save mr-2"></i> Simpan Perubahan</>}
                 </Button>
-                <Button color="gray" onClick={() => setIsEditing(false)}>
-                  Batal
+                <Button
+                  color="gray"
+                  variant="outlined"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setOriginalPhotoFile(null);
+                    fetchProfile();
+                  }}
+                  className="px-6 py-3 rounded-lg border-gray-400 text-gray-700 hover:bg-gray-50 transition-all duration-300"
+                  disabled={loading}
+                >
+                  <i className="fa-solid fa-times mr-2"></i> Batal
                 </Button>
               </div>
             </form>
           )}
         </CardBody>
       </Card>
+
+      {/* Dialog Ubah Kata Sandi */}
+      <Dialog open={showPasswordDialog} handler={setShowPasswordDialog} size="xs">
+        <DialogHeader className="text-blue-700 font-bold">Ubah Kata Sandi</DialogHeader>
+        <DialogBody divider className="space-y-4">
+          <Input
+            label="Kata Sandi Saat Ini"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            size="lg"
+          />
+          <Input
+            label="Kata Sandi Baru"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            size="lg"
+          />
+          <Input
+            label="Konfirmasi Kata Sandi Baru"
+            type="password"
+            value={confirmNewPassword}
+            onChange={(e) => setConfirmNewPassword(e.target.value)}
+            size="lg"
+          />
+          {passwordError && (
+            <Typography color="red" className="text-sm">
+              {passwordError}
+            </Typography>
+          )}
+        </DialogBody>
+        <DialogFooter className="gap-2">
+          <Button
+            variant="text"
+            color="red"
+            onClick={() => {
+              setShowPasswordDialog(false);
+              setCurrentPassword("");
+              setNewPassword("");
+              setConfirmNewPassword("");
+              setPasswordError("");
+            }}
+          >
+            Batal
+          </Button>
+          <Button variant="gradient" color="blue" onClick={handleChangePassword}>
+            Ubah
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }
