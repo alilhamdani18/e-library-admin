@@ -65,8 +65,20 @@ export function Home() {
     },
     {
       color: "teal",
-      title: "Stok Tersedia",
-      value: stats?.availableBooks || 0,
+      title: "Stok Buku Fisik",
+      value: stats?.totalPhysicalBooks || 0,
+      icon: "book-open",
+    },
+    {
+      color: "lime",
+      title: "Stok Buku Online",
+      value: stats?.totalOnlineBooks || 0,
+      icon: "book-open",
+    },
+    {
+      color: "indigo",
+      title: "Buku Fisik Tersedia",
+      value: stats?.availablePhysicalBooks || 0,
       icon: "book-open",
     },
     {
@@ -112,9 +124,7 @@ export function Home() {
                 className: "w-6 h-6 text-white",
               })}
               footer={
-                <Typography className="font-normal text-blue-gray-600">
-                  <strong className="text-green-500">+0%</strong> dari bulan lalu
-                </Typography>
+               title
               }
             />
           ))

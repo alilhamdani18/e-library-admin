@@ -5,6 +5,7 @@ export const librarianServices = {
     try {
       const response = await api.get('api/librarian/dashboard/stats');
       return response.data.data;
+      
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       throw error;
@@ -45,9 +46,9 @@ export const librarianServices = {
       } else {
         // Jika tidak ada file baru, kirim sebagai JSON biasa
         const jsonData = {
-          name: librarianData.name,
+          name: librarianData.name || '',
           email: librarianData.email,
-          phone: librarianData.phone,
+          phone: librarianData.phone || '',
           address: librarianData.address || '',
           role: librarianData.role || '',
         };

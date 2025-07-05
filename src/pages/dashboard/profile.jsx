@@ -76,9 +76,9 @@ export function Profile() {
       setLoading(true);
 
       const dataToSend = {
-        name: profileData.name,
+        name: profileData.name || '',
         email: profileData.email,
-        phone: profileData.phone,
+        phone: profileData.phone || '',
         address: profileData.address || '',
         role: profileData.role || '',
       };
@@ -149,7 +149,7 @@ export function Profile() {
   if (loading || !profileData) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
-        <Typography variant="h5" color="blue-gray">Memuat data profil...</Typography>
+        <Typography variant="h5" color="green">Memuat data profil...</Typography>
       </div>
     );
   }
@@ -159,19 +159,19 @@ export function Profile() {
       <Card className="w-full max-w-4xl p-0 shadow-xl rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <CardHeader
           floated={false}
-          className="h-56 bg-gradient-to-br from-blue-600 to-light-blue-400 flex justify-center items-center rounded-b-3xl overflow-hidden shadow-lg"
+          className="h-56 bg-gradient-to-br from-green-600 to-light-green-400 flex justify-center items-center rounded-b-3xl overflow-hidden shadow-lg"
         >
           <div className="flex flex-col items-center absolute">
             <Avatar
-              src={profileData.profileImageUrl || "/img/default-avatar.png"} 
+              src={profileData.profileImageUrl || "/img/icon-app.png"} 
               alt="Profile Picture"
               size="xxl"
               variant="circular"
-              className="border-6 border-white shadow-xl ring-4 ring-blue-200 transition-all duration-300 hover:scale-105"
+              className="border-6 border-white shadow-xl ring-4 ring-green-200 transition-all duration-300 hover:scale-105"
             />
             {isEditing && (
               <div className="mt-5">
-                <label htmlFor="photo-upload" className="cursor-pointer bg-white text-sm text-blue-600 font-medium py-2 px-5 border border-blue-500 rounded-full shadow-md hover:bg-blue-50 transition duration-300 transform hover:scale-105 flex items-center gap-2">
+                <label htmlFor="photo-upload" className="cursor-pointer bg-white text-sm text-green-600 font-medium py-2 px-5 border border-green-500 rounded-full shadow-md hover:bg-green-50 transition duration-300 transform hover:scale-105 flex items-center gap-2">
                   <i className="fa-solid fa-camera"></i> Upload Foto Baru
                   <input
                     id="photo-upload"
@@ -189,43 +189,43 @@ export function Profile() {
         <CardBody className="px-8 pb-8 pt-16">
           {!isEditing ? (
             <div className="md:text-left">
-              <Typography variant="h3" color="blue-gray" className="mb-2 font-bold leading-tight">
+              <Typography variant="h3" color="green-gray" className="mb-2 font-bold leading-tight">
                 {profileData.name || ""}
               </Typography>
-              <Typography color="blue" className="mb-8 text-lg font-semibold uppercase">
+              <Typography color="green" className="mb-8 text-lg font-semibold uppercase">
                 {profileData.role || ""}
               </Typography>
 
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <i className="fa-solid fa-envelope text-xl text-blue-500 pt-1"></i>
+                  <i className="fa-solid fa-envelope text-xl text-green-500 pt-1"></i>
                   <div>
                     <Typography variant="small" color="gray" className="font-semibold">Email</Typography>
-                    <Typography variant="lead" color="blue-gray" className="font-normal">{profileData.email || ""}</Typography>
+                    <Typography variant="lead" color="green-gray" className="font-normal">{profileData.email || ""}</Typography>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <i className="fa-solid fa-phone text-xl text-blue-500 pt-1"></i>
+                  <i className="fa-solid fa-phone text-xl text-green-500 pt-1"></i>
                   <div>
                     <Typography variant="small" color="gray" className="font-semibold">Telepon</Typography>
-                    <Typography variant="lead" color="blue-gray" className="font-normal">{profileData.phone || ""}</Typography>
+                    <Typography variant="lead" color="green-gray" className="font-normal">{profileData.phone || ""}</Typography>
                   </div>
                 </div>
 
                 {profileData.address && (
                     <div className="flex items-start gap-4">
-                        <i className="fa-solid fa-map-marker-alt text-xl text-blue-500 pt-1"></i>
+                        <i className="fa-solid fa-map-marker-alt text-xl text-green-500 pt-1"></i>
                         <div>
                             <Typography variant="small" color="gray" className="font-semibold">Alamat</Typography>
-                            <Typography variant="lead" color="blue-gray" className="font-normal">{profileData.address || ""}</Typography>
+                            <Typography variant="lead" color="green-gray" className="font-normal">{profileData.address || ""}</Typography>
                         </div>
                     </div>
                 )}
               </div>
 
               <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Button onClick={() => setIsEditing(true)} color="blue" className="flex items-center gap-2 px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+                <Button onClick={() => setIsEditing(true)} color="green" className="flex items-center gap-2 px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
                   <i className="fa-solid fa-edit"></i> Edit Profil
                 </Button>
                 <Button onClick={() => setShowPasswordDialog(true)} color="red" variant="outlined" className="flex items-center gap-2 px-6 py-3 rounded-lg border-red-500 text-red-500 hover:bg-red-50 transition-all duration-300">
@@ -280,7 +280,7 @@ export function Profile() {
               <div className="flex gap-4 mt-6 col-span-full justify-end">
                 <Button 
                   type="submit" 
-                  color="blue" 
+                  color="green" 
                   className="px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                   disabled={loading}
                 >
@@ -307,7 +307,7 @@ export function Profile() {
 
       {/* Dialog Ubah Kata Sandi */}
       <Dialog open={showPasswordDialog} handler={setShowPasswordDialog} size="xs">
-        <DialogHeader className="text-blue-700 font-bold">Ubah Kata Sandi</DialogHeader>
+        <DialogHeader className="text-green-700 font-bold">Ubah Kata Sandi</DialogHeader>
         <DialogBody divider className="space-y-4">
           <Input
             label="Kata Sandi Saat Ini"
@@ -350,7 +350,7 @@ export function Profile() {
           >
             Batal
           </Button>
-          <Button variant="gradient" color="blue" onClick={handleChangePassword}>
+          <Button variant="gradient" color="green" onClick={handleChangePassword}>
             Ubah
           </Button>
         </DialogFooter>

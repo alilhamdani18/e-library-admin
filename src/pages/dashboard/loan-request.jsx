@@ -8,25 +8,20 @@ import {
   CardFooter,
 } from "@material-tailwind/react";
 import { BookOpenIcon, UserIcon } from "@heroicons/react/24/outline";
-import { loanServices } from "@/services/loanServices"; // pastikan path-nya benar
+import { loanServices } from "@/services/loanServices";
 import getDateString from "@/utils/getDate";
 import { getAuth } from "firebase/auth";
-import Alert from "../../components/Alert";
-
-
+import Alert from "../../components/Alert"; // Pastikan path ini benar
 
 export function LoanRequest() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [buttonLoadingId, setButtonLoadingId] = useState(null);
 
-
   const fetchRequests = async () => {
     try {
-      
       const data = await loanServices.getAllRequest();
       setRequests(data);
-      // console.log("Requests data:", data);
     } catch (error) {
       console.error("Gagal memuat data permintaan:", error);
     } finally {
@@ -46,18 +41,14 @@ export function LoanRequest() {
 
       if (!user) throw new Error("User belum login");
 
-      const uid = user.uid; 
-      console.log(uid);
-      
+      const uid = user.uid;
       await loanServices.approveLoan(id, uid);
-      setRequests((prev) => {
-        prev.filter((r) => r.id !== id);
-      });
-      
+      setRequests((prev) => prev.filter((r) => r.id !== id));
       console.log(`Request ${id} diterima`);
       return true;
     } catch (error) {
       console.error("Gagal menerima permintaan:", error);
+      return false; // Tambahkan ini agar ada nilai kembalian jika gagal
     } finally {
       setButtonLoadingId(null);
     }
@@ -72,7 +63,9 @@ export function LoanRequest() {
       if (!user) throw new Error("User belum login");
 
       const uid = user.uid;
-      await loanServices.rejectLoan(id, uid, reason); // pastikan service mendukung alasan
+      // Sekarang, 'reason' seharusnya sudah memiliki nilai yang benar
+      console.log("Nilai 'reason' sebelum dikirim dari handleTolak:", reason);
+      await loanServices.rejectLoan(id, uid, reason);
       setRequests((prev) => prev.filter((r) => r.id !== id));
       return true; // success
     } catch (error) {
@@ -83,14 +76,13 @@ export function LoanRequest() {
     }
   };
 
-
   const confirmTerima = async (id) => {
     const result = await Alert.confirm(
       'Terima Permintaan',
       'Apakah Anda yakin ingin menerima permintaan ini?',
       'Terima',
       'Batal'
-    )
+    );
     if(result.isConfirmed) {
       const success = await handleTerima(id);
       if(success) {
@@ -100,24 +92,32 @@ export function LoanRequest() {
       }
     }
   };
+
   const confirmReject = async (id) => {
     const result = await Alert.confirmWithTextarea(
       'Tolak Permintaan',
       'Apakah Anda yakin ingin menolak permintaan ini?',
       'Tolak',
-      'Batal'
-    )
-    if(result.isConfirmed) {
-      const success = await handleTolak(id);
-      if(success) {
+      'Batal',
+      'Masukkan alasan di sini...' // Tambahkan placeholder sesuai kebutuhan
+    );
+
+    // Pastikan result.isConfirmed dan result.value ada
+    if (result.isConfirmed) {
+      const reason = result.value || ''; // <-- AMBIL ALASAN DARI result.value
+      
+      // Debugging untuk memastikan 'reason' diambil dengan benar dari result
+      console.log("Reason diambil dari SweetAlert (result.value):", reason); 
+
+      // Teruskan 'reason' ke fungsi handleTolak
+      const success = await handleTolak(id, reason); 
+      if (success) {
         Alert.success('Permintaan Ditolak!', 'Permintaan berhasil diproses.');
       } else {
         Alert.error('Gagal!', 'Terjadi kesalahan saat memproses permintaan.');
       }
     }
   };
-
-
 
   return (
     <div className="mx-auto my-10 max-w-screen-lg px-4">
@@ -180,7 +180,6 @@ export function LoanRequest() {
           ))}
         </div>
       )}
-
     </div>
   );
 }

@@ -37,10 +37,10 @@ export function Users() {
     try {
       const data = await userService.getAllUsers();
       const transformedData = data.map(users => ({
-        profileImageUrl: users.profileImageUrl || "/img/default-avatar.jpeg",
-        name: users.name || "No name",
+        profileImageUrl: users.profileImageUrl || "/img/icon-app.png",
+        name: users.name || "No Name",
         email: users.email || "No Email",
-        address: users.address || "Unknown Address",
+        address: users.address || "No Address",
         status: users.status,
         
         phone: users.phone,
@@ -144,7 +144,7 @@ export function Users() {
             className="w-full mb-2"
             color="green"
           />
-          <Select
+          {/* <Select
             label="Filter Status"
             value={statusFilter}
             onChange={(val) => {
@@ -157,7 +157,7 @@ export function Users() {
             <Option value="all">Semua</Option>
             <Option value="active">Active</Option>
             <Option value="purna">Purna</Option>
-          </Select>
+          </Select> */}
         </div>
 
         {/* Body dengan handling loading/error */}
@@ -172,7 +172,7 @@ export function Users() {
             <table className="w-full min-w-[700px] table-auto text-left">
               <thead>
                 <tr>
-                  {["Nama", "Alamat", "Phone", "Status Anggota",  "Since"].map((el) => (
+                  {["Nama", "Alamat", "Phone", "Terdaftar"].map((el) => (
                     <th
                       key={el}
                       className="border-b border-blue-gray-100 py-3 px-5"
@@ -188,7 +188,7 @@ export function Users() {
                 </tr>
               </thead>
               <tbody>
-                {currentData.map(({ profileImageUrl, name, email, address, phone, status, createdAt }, idx) => {
+                {currentData.map(({ profileImageUrl, name, email, address, phone, createdAt }, idx) => {
                   const className = `py-3 px-5 ${
                     idx === currentData.length - 1 ? "" : "border-b border-blue-gray-100"
                   }`;
@@ -221,14 +221,14 @@ export function Users() {
                           {phone}
                         </Typography>
                       </td>
-                      <td className={className}>
+                      {/* <td className={className}>
                           <Chip
                             variant="gradient"
                             color={status === "active" ? "green" : "blue"}
                             value={status === "active" ? "Active" : "Purna"}
                             className="py-0.5 px-3 text-xs font-medium w-fit text-center"
                           />
-                        </td>
+                        </td> */}
                       <td className={className}>
                         <Typography className="text-sm text-blue-grey-800">
                           {createdAt}
