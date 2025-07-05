@@ -273,6 +273,7 @@ export function Profile() {
                 name="role"
                 value={profileData.role || ""}
                 onChange={handleChange}
+                disabled
                 size="lg"
                 className="md:col-span-1"
               />
