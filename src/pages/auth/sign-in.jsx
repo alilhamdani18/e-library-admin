@@ -4,13 +4,17 @@ import {
   Checkbox,
   Button,
   Typography,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
 } from "@material-tailwind/react";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../../configs/firebase"; // sesuaikan path-nya
+import { auth, db } from "../../configs/firebase";
 import logo from "/img/e-library-icon.png";
 import Alert from "../../components/Alert";
 
@@ -21,39 +25,95 @@ export function SignIn() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  
+  const [showForgotPasswordDialog, setShowForgotPasswordDialog] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState("");
+  const [forgotPasswordError, setForgotPasswordError] = useState("");
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
 
   const togglePassword = () => setShowPassword((prev) => !prev);
 
-  const handleSignIn = async (e) => {
-  e.preventDefault();
-  setError("");
+  const handleOpenForgotPassword = () => {
+    setShowForgotPasswordDialog(true);
+    setForgotPasswordEmail(email);
+    setForgotPasswordMessage("");
+    setForgotPasswordError("");
+  };
 
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-    const user = userCredential.user;
+  const handleCloseForgotPassword = () => {
+    setShowForgotPasswordDialog(false);
+    setForgotPasswordEmail("");
+    setForgotPasswordMessage("");
+    setForgotPasswordError("");
+  };
 
-    const userRef = doc(db, "librarians", user.uid);
-    const userSnap = await getDoc(userRef);
+  const handleSendPasswordReset = async () => {
+    setForgotPasswordLoading(true);
+    setForgotPasswordMessage("");
+    setForgotPasswordError("");
 
-    if (userSnap.exists() && userSnap.data().role === "librarian") {
-      Alert.success('Login Berhasil!', 'Selamat datang kembali!');
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500); // memberi waktu untuk alert tampil
-    } else {
-      Alert.error('Akses Ditolak', 'Akun ini tidak memiliki akses sebagai pustakawan.');
+    if (!forgotPasswordEmail) {
+      setForgotPasswordError("Silakan masukkan alamat email.");
+      setForgotPasswordLoading(false);
       return;
     }
 
-  } catch (err) {
-    console.error(err);
-    Alert.error('Login Gagal', 'Email atau password salah.');
-  }
-};
+    try {
+      await sendPasswordResetEmail(auth, forgotPasswordEmail.trim());
+      setForgotPasswordMessage("Tautan reset kata sandi telah dikirim ke email Anda. Silakan periksa inbox dan folder spam Anda.");
+    } catch (err) {
+      let errorMessage = "Gagal mengirim tautan reset kata sandi.";
 
+      switch (err.code) {
+        case "auth/invalid-email":
+          errorMessage = "Alamat email tidak valid.";
+          break;
+        case "auth/user-not-found":
+          errorMessage = "Tidak ada pengguna dengan alamat email ini.";
+          break;
+        case "auth/missing-email":
+          errorMessage = "Alamat email tidak boleh kosong.";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "Terlalu banyak percobaan. Silakan coba lagi nanti.";
+          break;
+        default:
+          errorMessage = `Terjadi kesalahan: ${err.message}`;
+          break;
+      }
+      setForgotPasswordError(errorMessage);
+      Alert.error('Gagal!', errorMessage);
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
 
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const user = userCredential.user;
+
+      const userRef = doc(db, "librarians", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists() && userSnap.data().role === "librarian") {
+        Alert.success('Login Berhasil!', 'Selamat datang kembali!');
+
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
+      } else {
+        Alert.error('Akses Ditolak', 'Akun ini tidak memiliki akses sebagai pustakawan.');
+        await auth.signOut(); // Penting: Logout jika bukan pustakawan
+      }
+
+    } catch (err) {
+      Alert.error('Login Gagal', 'Email atau password salah.');
+    }
+  };
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 via-teal-200 to-emerald-100 px-4">
@@ -129,9 +189,14 @@ export function SignIn() {
               }
               containerProps={{ className: "-ml-2.5" }}
             />
-            <Link to="#" className="text-blue-500 hover:underline">
+            <Button
+              variant="text"
+              color="blue"
+              onClick={handleOpenForgotPassword}
+              className="p-0 text-sm normal-case"
+            >
               Forgot password?
-            </Link>
+            </Button>
           </div>
 
           <Button
@@ -143,6 +208,51 @@ export function SignIn() {
           </Button>
         </form>
       </Card>
+
+      <Dialog open={showForgotPasswordDialog} handler={handleCloseForgotPassword} size="xs">
+        <DialogHeader className="text-blue-gray-800">Lupa Kata Sandi</DialogHeader>
+        <DialogBody divider className="space-y-4">
+          <Typography color="gray" className="mb-4">
+            Masukkan alamat email Anda yang terdaftar, dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda.
+          </Typography>
+          <Input
+            label="Email"
+            type="email"
+            value={forgotPasswordEmail}
+            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            size="lg"
+            disabled={forgotPasswordLoading}
+          />
+          {forgotPasswordMessage && (
+            <Typography color="green" className="text-sm">
+              {forgotPasswordMessage}
+            </Typography>
+          )}
+          {forgotPasswordError && (
+            <Typography color="red" className="text-sm">
+              {forgotPasswordError}
+            </Typography>
+          )}
+        </DialogBody>
+        <DialogFooter className="gap-2">
+          <Button
+            variant="text"
+            color="red"
+            onClick={handleCloseForgotPassword}
+            disabled={forgotPasswordLoading}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="gradient"
+            color="blue"
+            onClick={handleSendPasswordReset}
+            disabled={forgotPasswordLoading}
+          >
+            {forgotPasswordLoading ? "Mengirim..." : "Reset Kata Sandi"}
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </section>
   );
 }

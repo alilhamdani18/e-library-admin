@@ -201,8 +201,6 @@ export function LoanHistory() {
                     "Judul Buku",
                     "Pengguna",
                     "Status",
-                    "Tgl Pinjam",
-                    "Tgl Dikembalikan",
                     "Aksi",
                   ].map((el) => (
                     <th
@@ -225,13 +223,13 @@ export function LoanHistory() {
                   const {
                     id,
                     cover = "/img/default-avatar.jpeg",
-                    author = "Unknown User",
+                    author = "Unknown Author",
                     user = "Unknown User",
                     email = "No Email",
                     title = "Unknown Book",
                     status,
-                    approvedDate = "-",
-                    returnDate = "-",
+                    // approvedDate = "-",
+                    // returnDate = "-",
                   } = loan || {};
 
                   const className = `py-3 px-5 ${
@@ -289,7 +287,7 @@ export function LoanHistory() {
                           className="py-0.5 px-3 text-xs font-medium w-fit"
                         />
                       </td>
-                      <td className={className}>
+                      {/* <td className={className}>
                         <Typography className="text-sm">
                           {approvedDate}
                         </Typography>
@@ -298,7 +296,7 @@ export function LoanHistory() {
                         <Typography className="text-sm">
                           {returnDate}
                         </Typography>
-                      </td>
+                      </td> */}
                       <td className={className}>
                         <Button
                           size="sm"
@@ -375,7 +373,7 @@ export function LoanHistory() {
               </div>
               <div className="text-sm text-blue-gray-700 space-y-2 mb-6">
                 <div>
-                  <strong>Status:</strong>{" "}
+                  <strong>Status :</strong>{" "}
                   <Chip
                     variant="gradient"
                     color={selectedBook.status == "approved" ? "green" : "orange"}
@@ -384,15 +382,15 @@ export function LoanHistory() {
                   />
                 </div>
                 <div>
-                  <strong>Tanggal Pinjam:</strong> 
+                  <strong>Tanggal Pinjam : </strong> 
                   {selectedBook.approvedDate}
                 </div>
                 <div>
-                  <strong>Tanggal Dikembalikan:</strong>{" "}
+                  <strong>Tanggal Dikembalikan : </strong>{" "}
                   {selectedBook.returnDate}
                 </div>
                 <div>
-                  <strong>Durasi Peminjaman:</strong>{" "}
+                  <strong>Durasi Peminjaman : </strong>{" "}
                   {selectedBook.loanDuration} hari
                 </div>
               </div>
