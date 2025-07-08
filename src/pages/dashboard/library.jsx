@@ -519,14 +519,13 @@ export function Library() {
       </Card>
 
       {/* Modal Tambah Buku */}
-      {/* ... (kode modal tetap sama) ... */}
       <Dialog open={openAddModal} handler={() => setOpenAddModal(!openAddModal)} size="lg">
         <DialogHeader className="justify-center">Tambah Buku Baru</DialogHeader>
-        <DialogBody divider className="max-h-[80vh] overflow-y-auto">
+        <DialogBody divider className="max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col items-center p-2 border border-blue-gray-100 rounded-lg shadow-sm">
-                <Typography variant="h6" color="blue-gray" className="mb-2">
+                <Typography variant="h6" color="blue-gray" className="mb-2 text-sm">
                   Upload Cover Buku
                 </Typography>
                 <div
@@ -550,14 +549,15 @@ export function Library() {
               </div>
 
               <div className="flex flex-col items-center p-2 border border-blue-gray-100 rounded-lg shadow-sm">
-                <Typography variant="h6" color="blue-gray" className="mb-2">
+                <Typography variant="h6" color="blue-gray" className="mb-2 text-sm">
                   Upload File Buku (PDF/EPUB)
                 </Typography>
                 <div
                   className="flex flex-col items-center justify-center border-2 border-dashed border-green-200 bg-green-50 hover:bg-green-100 transition-colors rounded-xl p-4 text-center cursor-pointer w-full h-36"
                   onClick={() => document.getElementById("book-file-upload-add").click()}
                 >
-                  {/* <img src="/img/pdf-icon.png" alt="PDF Icon" className="w-10 h-10 mb-1 opacity-80" /> */}
+                  <img src="/img/upload-icon.png" alt="Upload Icon" className="w-10 h-10 mb-1 opacity-80" />
+
                   <p className="text-green-600 font-medium text-xs">
                     {formData.bookFile ? formData.bookFile.name : "Klik untuk Upload File Buku"}
                   </p>
@@ -867,7 +867,7 @@ export function Library() {
       {/* Modal Detail Buku */}
       <Dialog open={openDetailModal} handler={() => setOpenDetailModal(!openDetailModal)} size="md">
         <DialogHeader className="justify-center">Detail Buku</DialogHeader>
-        <DialogBody divider className="max-h-[80vh] overflow-y-auto">
+        <DialogBody divider className="max-h-[70vh] overflow-y-auto">
           {selectedBook && (
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-full md:w-1/3 flex-shrink-0">

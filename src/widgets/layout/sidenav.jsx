@@ -11,7 +11,10 @@ import { UserCircleIcon } from "@heroicons/react/24/solid";
 
 import { useMaterialTailwindController, setOpenSidenav } from "@/context";
 import { getAuth, signOut } from "firebase/auth";
-import { routes } from "@/routes";
+// import { routes } from "@/routes"; // routes akan diteruskan sebagai prop
+import { useState, useEffect } from "react"; // Import useState dan useEffect
+import { collection, query, where, onSnapshot } from "firebase/firestore"; // Import Firestore functions
+import { db } from "../../configs/firebase"; // Pastikan path ini benar untuk db
 
 export function Sidenav({ brandImg, brandName, routes }) {
   const [controller, dispatch] = useMaterialTailwindController();
@@ -25,18 +28,33 @@ export function Sidenav({ brandImg, brandName, routes }) {
   const navigate = useNavigate();
   const auth = getAuth();
 
-  const handleLogout = () => {
-      signOut(auth)
-        .then(() => {
-          navigate("/sign-in");
-        })
-        .catch((error) => {
-          console.error("Logout gagal:", error);
-        });
-  };
-  
-  const sidebarRoutes = routes.filter(route => route.layout === "dashboard");
+  // State untuk jumlah permintaan pinjaman
+  const [loanRequestCount, setLoanRequestCount] = useState(0);
 
+  // Efek untuk mengambil jumlah loan request secara real-time
+  useEffect(() => {
+    const q = query(collection(db, "loans"), where("status", "==", "pending"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setLoanRequestCount(snapshot.size);
+    }, (error) => {
+      console.error("Error listening to loan requests:", error);
+      setLoanRequestCount(0); // Set ke 0 jika ada error
+    });
+
+    return () => unsubscribe(); // Cleanup listener
+  }, []);
+
+  const handleLogout = () => {
+    signOut(auth)
+      .then(() => {
+        navigate("/sign-in");
+      })
+      .catch((error) => {
+        console.error("Logout gagal:", error);
+      });
+  };
+
+  const sidebarRoutes = routes.filter(route => route.layout === "dashboard");
 
   return (
     <aside
@@ -47,7 +65,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
       <div className={`relative`}>
         <Link
           to="/"
-          className="flex flex-col items-center justify-center text-center"
+          className="flex flex-col items-center justify-center"
         >
           <img
             src={brandImg}
@@ -72,62 +90,56 @@ export function Sidenav({ brandImg, brandName, routes }) {
         >
           <XMarkIcon strokeWidth={2.5} className="h-5 w-5 text-white" />
         </IconButton>
-       
       </div>
       <div className="m-4">
-
         {sidebarRoutes.map(({ layout, title, pages }, key) => (
           <ul key={key} className="mb-3 flex flex-col gap-1">
             {title && (
               <li className="mx-3.5 mt-4 mb-2">
                 <Typography
                   variant="small"
-                  color={sidenavType === "colorize" ? "white" : "green"} 
+                  color={sidenavType === "colorize" ? "white" : "green"}
                   className="font-black uppercase opacity-75"
                 >
                   {title}
                 </Typography>
               </li>
             )}
-            {pages.map(({ icon, name, path }) => (
-              <li key={name}>
-                <NavLink to={`/${layout}${path}`}>
-                  {({ isActive }) => (
-                    <Button
-                      variant={isActive ? "gradient" : "text"}
-                      color="green" 
-                      className="flex items-center gap-4 px-4 capitalize"
-                      fullWidth
-                    >
-                      {icon}
-                      <Typography
-                        color="inherit"
-                        className="font-medium capitalize"
-                      >
-                        {name}
-                      </Typography>
-                    </Button>
-                  )}
-                </NavLink>
-              </li>
-            ))}
-              {/* <li className="mx-3.5 mt-4 mb-2">
-                <Button
-                  variant="text"
-                  color="blue-gray"
-                  onClick={handleLogout}
-                  className="hidden items-center gap-1 px-4 xl:flex normal-case"
-                >
-                  <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
-                  Logout
-                </Button>
+            {pages.map(({ icon, name, path }) => {
+              const currentBadgeCount = (name === "Loan Request") ? loanRequestCount : 0;
 
-              </li> */}
+              return (
+                <li key={name}>
+                  <NavLink to={`/${layout}${path}`}>
+                    {({ isActive }) => (
+                      <Button
+                        variant={isActive ? "gradient" : "text"}
+                        color="green"
+                        className="flex gap-4 px-4 capitalize"
+                        fullWidth
+                      >
+                        {icon}
+                        <Typography
+                          color="inherit"
+                          className="font-medium" 
+                        >
+                          {name}
+                        </Typography>
+                        {currentBadgeCount > 0 && ( 
+                          <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2.5 pt-1  rounded-2xl">
+                            {currentBadgeCount}
+                          </span>
+                        )}
+                      </Button>
+                    )}
+                  </NavLink>
+                </li>
+              );
+            })}
             <div>
             </div>
           </ul>
         ))}
-        
       </div>
     </aside>
   );

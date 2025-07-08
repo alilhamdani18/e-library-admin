@@ -186,7 +186,7 @@ export function Profile() {
           </div>
         </CardHeader>
 
-        <CardBody className="px-8 pb-8 pt-16">
+        <CardBody className="px-4 pb-8 pt-16">
           {!isEditing ? (
             <div className="md:text-left">
               <Typography variant="h3" color="green-gray" className="mb-2 font-bold leading-tight">
@@ -282,10 +282,10 @@ export function Profile() {
                 <Button 
                   type="submit" 
                   color="green" 
-                  className="px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                  className="flex flex-wrap gap-2 items-center justify-center px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                   disabled={loading}
                 >
-                  {loading ? "Menyimpan..." : <><i className="fa-solid fa-save mr-2"></i> Simpan Perubahan</>}
+                  {loading ? "Menyimpan..." : <><i className="fa-solid fa-save"></i>Simpan Perubahan</>}
                 </Button>
                 <Button
                   color="gray"
@@ -295,10 +295,10 @@ export function Profile() {
                     setOriginalPhotoFile(null);
                     fetchProfile();
                   }}
-                  className="px-6 py-3 rounded-lg border-gray-400 text-gray-700 hover:bg-gray-50 transition-all duration-300"
+                  className="flex flex-wrap gap-2 items-center justify-center px-6 py-3 rounded-lg border-gray-400 text-gray-700 hover:bg-gray-50 transition-all duration-300"
                   disabled={loading}
                 >
-                  <i className="fa-solid fa-times mr-2"></i> Batal
+                  <i className="fa-solid fa-times"></i> Batal
                 </Button>
               </div>
             </form>

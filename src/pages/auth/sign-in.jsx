@@ -180,20 +180,12 @@ export function SignIn() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
-            <Checkbox
-              label={
-                <Typography variant="small" color="gray" className="font-medium">
-                  Remember me
-                </Typography>
-              }
-              containerProps={{ className: "-ml-2.5" }}
-            />
+          <div className="flex items-center justify-end text-sm">
             <Button
               variant="text"
               color="blue"
               onClick={handleOpenForgotPassword}
-              className="p-0 text-sm normal-case"
+              className="p-0 text-xs normal-case"
             >
               Forgot password?
             </Button>

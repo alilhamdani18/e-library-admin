@@ -57,10 +57,7 @@ export function Home() {
       } catch (error) {
         console.error("Gagal mengambil data Active Loans:", error);
       }
-      // Note: You might want a separate loading state for activeLoans if their fetch time is significantly different,
-      // or if you want to show a separate loader for that section.
-      // For now, keeping the single `loading` state for the primary dashboard cards.
-      // If you need to differentiate, remove `setLoading(false)` from here.
+     
     };
     fetchActiveLoans();
   }, []);
@@ -130,27 +127,26 @@ export function Home() {
         {loading ? (
           <Typography>Memuat statistik...</Typography>
         ) : (
-          cardData.map(({ color, title, value, icon, unitLabel }) => ( // <-- Destructure unitLabel here
+          cardData.map(({ color, title, value, icon, unitLabel }) => ( 
             <StatisticsCard
               key={title}
               color={color}
               title={title}
-              unitLabel={unitLabel} // <-- Now unitLabel is accessible
-              value={value.toString()} // Ensure value is string for Typography
+              unitLabel={unitLabel} 
+              value={value.toString()} 
               icon={React.createElement(iconMap[icon], {
                 className: "w-6 h-6 text-white",
               })}
               footer={
-                // Footer is passed directly as title, assuming it's a small descriptive text
-                title // or you could pass a specific footer prop from cardData if needed
+
+                title 
               }
             />
           ))
         )}
       </div>
 
-      {/* Your commented-out Active Loans section is omitted for brevity */}
-      {/* If you re-enable it, remember to handle `loading` and `activeLoans` state for it */}
+   
     </div>
   );
 }

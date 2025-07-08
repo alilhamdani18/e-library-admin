@@ -22,7 +22,6 @@ export function Users() {
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
 
   const rowsPerPage = 10;
 
@@ -41,9 +40,8 @@ export function Users() {
         name: users.name || "No Name",
         email: users.email || "No Email",
         address: users.address || "No Address",
-        status: users.status,
         
-        phone: users.phone,
+        phone: users.phone || "No Phone",
         createdAt: getDateString(users.createdAt),
       }));
       setUsers(transformedData);
@@ -58,19 +56,18 @@ export function Users() {
     }
   };
     // Filter & pencarian
-  const filteredData = users.filter(({ name, email, address, status, phone }) => {
+  const filteredData = users.filter(({ name, email, address, phone }) => {
     const lower = searchTerm.toLowerCase();
     const matchesSearch =
       name.toLowerCase().includes(lower) ||
       email.toLowerCase().includes(lower) ||
       address.toLowerCase().includes(lower) ||
-      status.toLowerCase().includes(lower) ||
       phone.toLowerCase().includes(lower);
+   
 
-    const matchesStatus =
-      statusFilter === "all" || status === statusFilter;
+   
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
@@ -108,20 +105,20 @@ export function Users() {
   }
   
     // Error state
-    // if (error) {
-    //   return (
-    //     <Card className="mt-8 mb-6 border border-red-100 shadow-lg">
-    //       <CardBody className="p-6 text-center">
-    //         <Typography variant="h6" color="red">
-    //           {error}
-    //         </Typography>
-    //         <Button color="blue" onClick={fetchUsers} className="mt-4">
-    //           Coba Lagi
-    //         </Button>
-    //       </CardBody>
-    //     </Card>
-    //   );
-    // }
+    if (error) {
+      return (
+        <Card className="mt-8 mb-6 border border-red-100 shadow-lg">
+          <CardBody className="p-6 text-center">
+            <Typography variant="h6" color="red">
+              {error}
+            </Typography>
+            <Button color="blue" onClick={fetchUsers} className="mt-4">
+              Coba Lagi
+            </Button>
+          </CardBody>
+        </Card>
+      );
+    }
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-6">
@@ -135,7 +132,7 @@ export function Users() {
         {/* Filter & Search */}
         <div className="flex flex-col sm:flex-row gap-4 px-6 py-4 bg-gray-50 border-b">
           <Input
-            label="Cari Nama, Email, Alamat, atau Status"
+            label="Cari Nama, Email, atau Alamat"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -200,7 +197,7 @@ export function Users() {
                     >
                       <td className={className}>
                         <div className="flex items-center gap-4">
-                          <Avatar src={profileImageUrl} alt={name} size="lg" variant="rounded" />
+                          <Avatar src={profileImageUrl} alt={name} className="max-w-[50px]" size="lg" variant="rounded" />
                           <div>
                             <Typography variant="small" color="blue-gray" className="font-semibold">
                               {name}
