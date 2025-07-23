@@ -38,11 +38,40 @@ export function LoanHistory() {
       const returnSeconds = loan.returnDate?._seconds;
 
       let finalReturnDate;
+      let calculatedDueDate; 
+      let calculatedReturnDate; 
+      let loanReturnStatus = ""; 
+
+      if (returnSeconds) {
+        finalReturnDate = new Date(returnSeconds * 1000);
+        calculatedReturnDate = finalReturnDate;
+      } else if (approvedSeconds && loan.loanDuration) {
+        finalReturnDate = new Date(approvedSeconds * 1000);
+        finalReturnDate.setDate(finalReturnDate.getDate() + loan.loanDuration);
+      }
+
+      if (loan.dueDate?._seconds) {
+          calculatedDueDate = new Date(loan.dueDate._seconds * 1000);
+      } else if (typeof loan.dueDate === 'string' && loan.dueDate !== '-') {
+          calculatedDueDate = new Date(loan.dueDate); 
+      }
+
+      if (calculatedReturnDate) calculatedReturnDate.setHours(0, 0, 0, 0);
+      if (calculatedDueDate) calculatedDueDate.setHours(0, 0, 0, 0);
+
+
+      // Logika untuk menentukan status Telat/Tepat Waktu
+      if (loan.status === "returned" && calculatedReturnDate && calculatedDueDate) {
+        if (calculatedReturnDate > calculatedDueDate) {
+          loanReturnStatus = "Telat";
+        } else {
+          loanReturnStatus = "Tepat Waktu";
+        }
+      }
 
       if (returnSeconds) {
         finalReturnDate = new Date(returnSeconds * 1000);
       } else if (approvedSeconds && loan.loanDuration) {
-        // Hitung returnDate sementara dari approvedDate + loanDuration
         finalReturnDate = new Date(approvedSeconds * 1000);
         finalReturnDate.setDate(finalReturnDate.getDate() + loan.loanDuration);
       }
@@ -51,17 +80,20 @@ export function LoanHistory() {
         id: loan.id,
         cover: loan.book?.coverUrl || "/img/default-cover.jpeg",
         img: loan.user?.profileImageUrl || "/img/default-avatar.jpeg",
-        author: loan.book?.author || "Unknown User",
+        author: loan.book?.author || "Unknown Author",
         user: loan.user?.name || "Unknown User",
         email: loan.user?.email || "No Email",
         title: loan.book?.title || "Unknown Book",
         status: loan.status,
         loanDuration: loan.loanDuration,
         approvedDate: getDateString(loan.approvedDate),
+        dueDate: getDateString(loan.dueDate),
         returnDate: finalReturnDate
           ? getDateString({ _seconds: finalReturnDate.getTime() / 1000 })
           : "-",
+        loanReturnStatus: loanReturnStatus, 
       };
+     
     });
   };
 
@@ -76,6 +108,9 @@ export function LoanHistory() {
     try {
       const data = await loanServices.getAllLoans();
       setRawLoanHistory(data); 
+      console.log("Raw Loan Data:", data);
+      
+      
       setLoanHistory(transformLoanData(data));
 
      
@@ -84,7 +119,7 @@ export function LoanHistory() {
       console.error("Error fetching loans:", err);
       
       // Fallback ke dummy data untuk testing
-      console.log("Using dummy data as fallback");
+      console.log("Using dummy data as fallback", rawLoanHistory);
       setLoanHistory();
     } finally {
       setLoading(false);
@@ -357,11 +392,12 @@ export function LoanHistory() {
           {selectedBook && (
             <>
               <div className="flex items-center gap-4 mb-4">
-                <img 
-                  src={selectedBook.cover} 
-                  alt="selectedBook.title" 
-                  className="h-24 rounded-md shadow-lg shadow-blue-gray-500/25"/>
-                
+                <img
+                  src={selectedBook.cover}
+                  alt={selectedBook.title}
+                  className="h-24 rounded-md shadow-lg shadow-blue-gray-500/25"
+                />
+
                 <div>
                   <Typography className="font-bold text-blue-gray-800">
                     {selectedBook.title}
@@ -381,25 +417,47 @@ export function LoanHistory() {
                     className="py-0.5 px-3 text-xs font-medium w-fit inline-block"
                   />
                 </div>
+                {/* Menampilkan status Telat/Tepat Waktu jika buku sudah dikembalikan */}
+                {selectedBook.status === "returned" && selectedBook.loanReturnStatus && (
+                  <div>
+                    <strong>Status Pengembalian :</strong>{" "}
+                    <Chip
+                      variant="gradient"
+                      color={selectedBook.loanReturnStatus === "Telat" ? "red" : "blue"}
+                      value={selectedBook.loanReturnStatus}
+                      className="py-0.5 px-3 text-xs font-medium w-fit inline-block"
+                    />
+                  </div>
+                )}
                 <div>
-                  <strong>Tanggal Pinjam : </strong> 
+                  <strong>Durasi Pinjaman : </strong>{" "}
+                  {selectedBook.loanDuration} hari
+                </div>
+                <div>
+                  <strong>Tanggal Pinjam : </strong>
                   {selectedBook.approvedDate}
                 </div>
                 <div>
-                  <strong>Tanggal Dikembalikan : </strong>{" "}
-                  {selectedBook.returnDate}
+                  <strong>Jatuh Tempo : </strong>
+                  {selectedBook.dueDate}
                 </div>
                 <div>
-                  <strong>Durasi Peminjaman : </strong>{" "}
-                  {selectedBook.loanDuration} hari
+                  <strong>
+                    {selectedBook.status === "returned"
+                      ? "Tanggal Dikembalikan : "
+                      : "Prediksi Tanggal Kembali : "}
+                  </strong>{" "}
+                  {selectedBook.status === "returned"
+                    ? selectedBook.returnDate
+                    : selectedBook.dueDate}
                 </div>
               </div>
               <div className="flex items-center gap-4 mt-2 mb-4">
                 <Avatar
-                    src={selectedBook.img}
-                    alt={selectedBook.user}
-                    size="sm"
-                  />
+                  src={selectedBook.img}
+                  alt={selectedBook.user}
+                  size="sm"
+                />
                 <div>
                   <Typography className="font-bold text-blue-gray-800">
                     {selectedBook.user}
@@ -408,13 +466,12 @@ export function LoanHistory() {
                     {selectedBook.email}
                   </Typography>
                 </div>
-                
               </div>
               <div className="flex justify-end gap-2">
                 {selectedBook.status == "approved" && (
                   <Button color="orange" onClick={() => {
                     document.activeElement?.blur();
-                    handleCloseModal();       
+                    handleCloseModal();
                     setTimeout(() => confirmReturn(selectedBook), 300);
                   }}
                   >

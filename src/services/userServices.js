@@ -2,16 +2,15 @@
 import api from '../configs/api';
 
 export const userService = {
-  // POST Register new user
-  registerUser: async (userData) => {
-    try {
-      const response = await api.post('/api/users/register', userData);
-      return response.data;
-    } catch (error) {
-      console.error('Error registering user:', error);
-      throw error;
-    }
-  },
+  // registerUser: async (userData) => {
+  //   try {
+  //     const response = await api.post('/api/users/register', userData);
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error('Error registering user:', error);
+  //     throw error;
+  //   }
+  // },
 
   // GET All Users
   getAllUsers: async () => {

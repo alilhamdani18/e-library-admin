@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react"; // Tambahkan useCallback
+import React, { useState, useEffect, useCallback } from "react"; 
 import {
   Card,
   CardBody,
   CardHeader,
-  CardFooter, // CardFooter is still used for pagination buttons
+  CardFooter, 
   Textarea,
   Typography,
   Input,
@@ -19,15 +19,11 @@ import {
 } from "@material-tailwind/react";
 import {
   MagnifyingGlassIcon,
-  // HeartIcon, // Not used, can be removed
   DocumentArrowUpIcon,
-  // EyeIcon, // Not used in imports, but likely for detail modal
   CloudArrowDownIcon,
 } from "@heroicons/react/24/solid";
 import { bookService } from "../../services/bookServices";
-// import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import Alert from "../../components/Alert";
-// import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline"; // Import these for pagination arrows
 
 export function Library() {
   const [books, setBooks] = useState([]);
@@ -43,10 +39,6 @@ export function Library() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
-  // HAPUS: itemsPerPage tidak lagi relevan untuk perhitungan paginasi di frontend
-  // const itemsPerPage = 10;
-
-  // Tambahkan state untuk totalPages dan totalItems yang akan diterima dari backend
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -78,17 +70,14 @@ export function Library() {
     try {
       const response = await bookService.getAllBooks(
         currentPage,
-        12, // Ini adalah 'limit' yang dikirim ke backend, sesuai dengan itemsPerPage Anda
+        12, 
         selectedCategory === 'Semua' ? '' : selectedCategory,
         searchTerm
       );
 
-      // console.log("Response from backend:", response);
-      // response.data adalah array buku untuk halaman saat ini
-      // response.pagination berisi totalItems dan totalPages dari backend
       setBooks(response.data);
       setTotalPages(response.pagination.totalPages);
-      setTotalItems(response.pagination.totalItems); // Set totalItems dari backend
+      setTotalItems(response.pagination.totalItems); 
 
     } catch (err) {
       setError('Failed to fetch books: ' + err.message);
@@ -96,7 +85,7 @@ export function Library() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedCategory, searchTerm]); // Dependensi untuk useCallback
+  }, [currentPage, selectedCategory, searchTerm]); 
 
   useEffect(() => {
     fetchBooks();
@@ -108,12 +97,6 @@ export function Library() {
     }
   };
 
-  // Ensure categories are unique and include 'Semua' and predefined
-  // Filter buku untuk kategori sekarang tidak lagi menggunakan 'books' yang sudah dipaginasi
-  // melainkan dari predefinedCategories.
-  // Jika Anda ingin kategori yang muncul di dropdown berasal dari SEMUA buku di database (tanpa paginasi),
-  // Anda harus membuat endpoint API lain untuk mendapatkan daftar kategori unik.
-  // Untuk saat ini, kita akan gunakan predefinedCategories ditambah 'Semua'.
   const categories = ["Semua", ...predefinedCategories].filter(
     (value, index, self) => self.indexOf(value) === index
   );
@@ -175,7 +158,7 @@ export function Library() {
       });
 
       setOpenAddModal(false);
-      setCurrentPage(1); // Reset ke halaman 1 setelah tambah buku baru
+      setCurrentPage(1); 
       await fetchBooks();
       Alert.success("Buku berhasil ditambahkan", "");
     } catch (error) {
@@ -218,7 +201,6 @@ export function Library() {
       setUploadProgress(0); 
 
       const dataToSend = new FormData();
-      // Only append fields if they have changed to avoid unnecessary updates
       if (formData.title !== selectedBook.title) dataToSend.append("title", formData.title);
       if (formData.author !== selectedBook.author) dataToSend.append("author", formData.author);
       if (Number(formData.year) !== selectedBook.year) dataToSend.append("year", formData.year);
@@ -255,8 +237,6 @@ export function Library() {
 
       setOpenEditModal(false);
       setSelectedBook(null);
-      // Tidak perlu mereset currentPage ke 1 di sini, karena update tidak selalu berarti data bergeser
-      // Biarkan fetchBooks() dipanggil lagi dengan currentPage yang sama
       await fetchBooks();
       Alert.success("Perubahan berhasil disimpan", "");
     } catch (error) {
@@ -285,14 +265,9 @@ export function Library() {
 
       setOpenDeleteModal(false);
       setSelectedBook(null);
-      // Reset ke halaman 1 jika setelah penghapusan halaman saat ini menjadi kosong
-      // atau jika total item berkurang sehingga totalPages juga berkurang
-      // Ini adalah logika yang lebih robust untuk penanganan setelah delete
-      if (books.length === 1 && currentPage > 1) { // Jika hanya ada 1 buku di halaman ini dan bukan halaman pertama
-        setCurrentPage(prev => prev - 1); // Mundur ke halaman sebelumnya
+      if (books.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1); 
       } else {
-        // Jika tidak, panggil ulang fetchBooks untuk me-refresh data di halaman yang sama
-        // Ini juga akan memperbarui totalPages dan totalItems
         await fetchBooks();
       }
       Alert.success("Buku berhasil dihapus", "");
@@ -312,22 +287,9 @@ export function Library() {
     }
   };
 
-  // HAPUS: Ini adalah logika paginasi frontend yang tidak lagi diperlukan
-  // const filteredBooks = books.filter((book) => {
-  //   const matchCategory = selectedCategory === "Semua" || book.category === selectedCategory;
-  //   const matchSearch =
-  //     book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     false;
-  //   return matchCategory && matchSearch;
-  // });
+  
 
-  // HAPUS: Ini adalah perhitungan totalPages frontend yang tidak lagi diperlukan
-  // const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
-  // const startIndex = (currentPage - 1) * itemsPerPage;
-  // const currentBooks = filteredBooks.slice(startIndex, startIndex + itemsPerPage);
-
-  if (loading && books.length === 0 && totalItems === 0) { // Tambahkan totalItems untuk kondisi awal
+  if (loading && books.length === 0 && totalItems === 0) {
     return (
       <Card className="mt-8 mb-6 border border-blue-gray-100 shadow-lg">
         <CardBody className="p-6 text-center">
@@ -349,7 +311,7 @@ export function Library() {
                 Pustaka
               </Typography>
               <Typography variant="small" className="font-normal text-blue-gray-500">
-                Pustaka ({totalItems} buku) {/* Gunakan totalItems dari backend */}
+                Pustaka ({totalItems} buku) 
               </Typography>
             </div>
             <Button
@@ -384,7 +346,7 @@ export function Library() {
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  setCurrentPage(1); // Reset to first page on search
+                  setCurrentPage(1); 
                 }}
                 color="green"
               />
@@ -395,7 +357,7 @@ export function Library() {
                 value={selectedCategory}
                 onChange={(val) => {
                   setSelectedCategory(val);
-                  setCurrentPage(1); // Reset to first page on category change
+                  setCurrentPage(1); 
                 }}
                 color="green"
               >
@@ -408,7 +370,7 @@ export function Library() {
             </div>
           </div>
 
-          {books.length === 0 && !loading ? ( // Gunakan books.length untuk mengecek buku yang ditampilkan di halaman saat ini
+          {books.length === 0 && !loading ? (
             <div className="text-center py-8">
               <Typography variant="h6" color="blue-gray" className="mb-2">
                 Tidak ada buku ditemukan
@@ -476,7 +438,7 @@ export function Library() {
             </div>
           )}
 
-          {/* Pagination buttons - menggunakan totalPages dari backend */}
+         
           {totalPages > 1 && (
             <div className="mt-8 flex justify-center items-center gap-2">
               <Button
@@ -484,7 +446,7 @@ export function Library() {
                 variant="outlined"
                 color="green"
                 disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)} // Panggil handler
+                onClick={() => handlePageChange(currentPage - 1)} 
               >
                 {/* <ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />  */}
                 Prev
@@ -496,7 +458,7 @@ export function Library() {
                   size="sm"
                   variant={currentPage === page ? "filled" : "outlined"}
                   color="green"
-                  onClick={() => handlePageChange(page)} // Panggil handler
+                  onClick={() => handlePageChange(page)} 
                   className="min-w-[36px]"
                 >
                   {page}
@@ -508,7 +470,7 @@ export function Library() {
                 variant="outlined"
                 color="green"
                 disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(currentPage + 1)} // Panggil handler
+                onClick={() => handlePageChange(currentPage + 1)} 
               >
                 Next 
                 {/* <ArrowRightIcon strokeWidth={2} className="h-4 w-4" /> */}
@@ -742,7 +704,7 @@ export function Library() {
               </div>
 
               {loading && uploadProgress > 0 && (
-                <div className="w-full mt-4 col-span-full"> {/* Menambahkan col-span-full agar progress bar mengambil seluruh lebar di bawah grid */}
+                <div className="w-full mt-4 col-span-full"> 
                   <Typography variant="small" color="blue-gray" className="mb-2">
                     Memproses : {uploadProgress}%
                   </Typography>
@@ -750,7 +712,7 @@ export function Library() {
                 </div>
               )}
 
-              <div className="flex flex-col gap-4"> {/* Ini adalah div untuk input lainnya */}
+              <div className="flex flex-col gap-4">
                 <Input
                   label="Judul"
                   name="title"
@@ -834,7 +796,7 @@ export function Library() {
             disabled={loading || !formData.title || !formData.author || !formData.category || (formData.category === "Others" && !formData.otherCategory)}
           >
             {loading && uploadProgress > 0 ? "Mengunggah..." : "Simpan Perubahan"}
-            {/* Hapus <Progress /> dari sini */}
+          
           </Button>
         </DialogFooter>
       </Dialog>

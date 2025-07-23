@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-import { IconButton } from "@material-tailwind/react";
 import {
   Sidenav,
   DashboardNavbar,
@@ -15,9 +14,12 @@ export function Dashboard() {
     <div className="min-h-screen bg-green-50">
       <Sidenav
         routes={routes}
-        // brandImg={
-        //   sidenavType === "colorize" ? "/img/e-library-icon.png" : "/img/e-library-icon.png"
-        // }
+        brand={{
+          name: "E-Library Admin",
+          image: "img/icon-app.png",
+          route: "/dashboard",
+        }}
+        brandName="E-Library Admin"
       />
       <div className="p-4 xl:ml-80">
         <DashboardNavbar />

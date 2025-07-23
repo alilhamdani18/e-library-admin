@@ -1,10 +1,8 @@
 // src/services/api.js
 import axios from 'axios';
 
-// Base URL dari Cloud Run Anda
-const BASE_URL = 'https://e-library-api-72451776465.asia-southeast2.run.app'; // Ganti dengan URL Cloud Run Anda
+const BASE_URL = 'https://e-library-api-72451776465.asia-southeast2.run.app'; 
 
-// Membuat instance axios dengan konfigurasi default
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 50000,
@@ -13,10 +11,8 @@ const api = axios.create({
   },
 });
 
-// Interceptor untuk menambahkan token jika diperlukan
 api.interceptors.request.use(
   (config) => {
-    // Jika Anda menggunakan authentication token
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -28,16 +24,13 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor untuk handle response errors
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
       localStorage.removeItem('authToken');
-      // Redirect to login if needed
     }
     return Promise.reject(error);
   }

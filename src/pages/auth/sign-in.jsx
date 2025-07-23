@@ -1,7 +1,6 @@
 import {
   Card,
   Input,
-  Checkbox,
   Button,
   Typography,
   Dialog,
@@ -10,7 +9,7 @@ import {
   DialogFooter,
 } from "@material-tailwind/react";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -107,7 +106,7 @@ export function SignIn() {
         }, 1500);
       } else {
         Alert.error('Akses Ditolak', 'Akun ini tidak memiliki akses sebagai pustakawan.');
-        await auth.signOut(); // Penting: Logout jika bukan pustakawan
+        await auth.signOut(); 
       }
 
     } catch (err) {

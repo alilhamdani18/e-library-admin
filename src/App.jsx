@@ -7,7 +7,6 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Rute yang dilindungi, hanya bisa diakses jika user login */}
         <Route
           path="/dashboard/*"
           element={

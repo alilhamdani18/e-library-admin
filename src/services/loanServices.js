@@ -6,7 +6,6 @@ export const loanServices = {
       const response = await api.get('/api/loans');
       const allLoans = response.data.data;
 
-      // Filter loans yang bukan 'pending'
       const filteredLoans = allLoans.filter(loan => loan.status !== 'pending' && loan.status !== 'rejected');
 
       return filteredLoans;
@@ -20,7 +19,6 @@ export const loanServices = {
       const response = await api.get('/api/loans');
       const allLoans = response.data.data;
 
-      // Filter loans yang bukan 'pending'
       const filteredLoans = allLoans.filter(loan => loan.status == 'pending');
 
       return filteredLoans;

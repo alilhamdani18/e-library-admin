@@ -16,16 +16,11 @@ export const bookService = {
       if (search) {
         params.search = search;
       }
-
-      // Gunakan instance `api` Anda untuk melakukan request GET
-      // Path '/books' diasumsikan sebagai endpoint relatif dari baseURL yang dikonfigurasi di `api`
+   
       const response = await api.get('/api/books', { params });
 
-      // <<< INI ADALAH BAGIAN KRUSIALNYA >>>
-      // Data JSON yang Anda tunjukkan sebelumnya adalah `response.data` dari Axios.
-      // Jadi, langsung kembalikan `response.data` ini.
-      console.log("Response from API (full object):", response.data); // Ini akan mencetak JSON lengkap
-      return response.data; // Ini mengembalikan { success: true, data: [...], pagination: {...} }
+      console.log("Response from API (full object):", response.data); 
+      return response.data;
 
     } catch (error) {
       console.error("Error fetching books:", error);

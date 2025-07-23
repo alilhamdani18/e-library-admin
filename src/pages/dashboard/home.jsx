@@ -16,11 +16,9 @@ import {
 } from "@heroicons/react/24/solid";
 
 import { StatisticsCard } from "@/widgets/cards";
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { librarianServices } from "@/services/librarianServices";
 import { loanServices } from "@/services/loanServices";
-// projectsTableData is commented out in your original code, keep it if needed.
-// import { projectsTableData } from "@/data";
+
 
 export function Home() {
   const [stats, setStats] = useState(null);
@@ -33,11 +31,11 @@ export function Home() {
       try {
         const response = await librarianServices.getDashboardStats();
         setStats(response);
-        console.log("Dashboard Stats:", response); // Added label for clarity
+        console.log("Dashboard Stats:", response); 
       } catch (error) {
         console.error("Gagal mengambil data dashboard:", error);
       } finally {
-        setLoading(false); // Set loading to false after stats fetch
+        setLoading(false); 
       }
     };
 
@@ -51,7 +49,7 @@ export function Home() {
         const response = await loanServices.getAllLoans();
         const filteredLoans = response.filter((loan) => loan.status == "approved");
 
-        console.log("Filtered Active Loans:", filteredLoans); // Added label for clarity
+        console.log("Filtered Active Loans:", filteredLoans); 
 
         setActiveLoans(filteredLoans);
       } catch (error) {

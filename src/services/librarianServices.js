@@ -24,27 +24,22 @@ export const librarianServices = {
     try {
       let response;
 
-      // Di sini, kita akan memeriksa apakah ada file foto baru (originalPhoto)
-      // Perhatikan bahwa `librarianData` di sini akan menjadi objek yang kita kirimkan dari komponen
-      // yang berisi data profil dan *mungkin* file foto baru
-      if (librarianData.profilePhotoFile) { // Menggunakan nama field yang lebih spesifik untuk file
-        // Jika ada file baru, kirim sebagai FormData
+      if (librarianData.profilePhotoFile) { 
         const formData = new FormData();
         formData.append("name", librarianData.name);
         formData.append("email", librarianData.email);
         formData.append("phone", librarianData.phone);
-        formData.append("address", librarianData.address || ''); // Tambahkan address jika ada di backend
-        formData.append("role", librarianData.role || ''); // Tambahkan role jika ada di backend
+        formData.append("address", librarianData.address || '');
+        formData.append("role", librarianData.role || ''); 
         
-        formData.append("profileImage", librarianData.profilePhotoFile); // <== nama field harus cocok dengan backend (misal: 'profilePhoto')
+        formData.append("profileImage", librarianData.profilePhotoFile); 
 
-        response = await api.put(`/api/librarian/profile/${librarianId}`, formData, { // <== URL endpoint yang benar
+        response = await api.put(`/api/librarian/profile/${librarianId}`, formData, { 
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
       } else {
-        // Jika tidak ada file baru, kirim sebagai JSON biasa
         const jsonData = {
           name: librarianData.name || '',
           email: librarianData.email,
@@ -52,7 +47,7 @@ export const librarianServices = {
           address: librarianData.address || '',
           role: librarianData.role || '',
         };
-        response = await api.put(`/api/librarian/profile/${librarianId}`, jsonData); // <== URL endpoint yang benar
+        response = await api.put(`/api/librarian/profile/${librarianId}`, jsonData); 
       }
 
       return response.data;
