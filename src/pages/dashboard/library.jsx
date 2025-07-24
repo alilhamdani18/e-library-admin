@@ -57,7 +57,7 @@ export function Library() {
 
   const [selectedBook, setSelectedBook] = useState(null);
 
-  const predefinedCategories = ["Novel", "Islamic", "Pendidikan", "Kitab", "Motivation", "Others"];
+  const predefinedCategories = ["Novel", "Islamic", "Pendidikan", "Kitab", "Motivation"]; 
 
   const handleUploadProgress = (progressEvent) => {
     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -68,19 +68,58 @@ export function Library() {
     setLoading(true);
     setError(null);
     try {
-      const response = await bookService.getAllBooks(
-        currentPage,
-        12, 
-        selectedCategory === 'Semua' ? '' : selectedCategory,
-        searchTerm
-      );
+      let fetchedBooks = [];
+      let totalItems = 0;
+      let totalPages = 0;
 
-      setBooks(response.data);
-      setTotalPages(response.pagination.totalPages);
-      setTotalItems(response.pagination.totalItems); 
+      if (selectedCategory === 'Semua') {
+        const response = await bookService.getAllBooks(
+          currentPage,
+          12,
+          '', 
+          searchTerm
+        );
+        fetchedBooks = response.data;
+        totalItems = response.pagination.totalItems;
+        totalPages = response.pagination.totalPages;
+
+      } else if (selectedCategory === 'Others') {
+        const response = await bookService.getAllBooks(
+          1,
+          1000000, 
+          '', 
+          searchTerm
+        );
+
+        const filteredForOthers = response.data.filter(book => 
+          !predefinedCategories.includes(book.category)
+        );
+
+        const startIndex = (currentPage - 1) * 12;
+        const endIndex = startIndex + 12;
+        fetchedBooks = filteredForOthers.slice(startIndex, endIndex);
+
+        totalItems = filteredForOthers.length;
+        totalPages = Math.ceil(totalItems / 12); 
+
+      } else {
+        const response = await bookService.getAllBooks(
+          currentPage,
+          12,
+          selectedCategory, 
+          searchTerm
+        );
+        fetchedBooks = response.data;
+        totalItems = response.pagination.totalItems;
+        totalPages = response.pagination.totalPages;
+      }
+
+      setBooks(fetchedBooks);
+      setTotalPages(totalPages);
+      setTotalItems(totalItems);
 
     } catch (err) {
-      setError('Failed to fetch books: ' + err.message);
+      setError('Gagal mengambil buku: ' + err.message);
       console.error(err);
     } finally {
       setLoading(false);
@@ -97,7 +136,7 @@ export function Library() {
     }
   };
 
-  const categories = ["Semua", ...predefinedCategories].filter(
+  const categories = ["Semua", ...predefinedCategories, "Others"].filter(
     (value, index, self) => self.indexOf(value) === index
   );
 
